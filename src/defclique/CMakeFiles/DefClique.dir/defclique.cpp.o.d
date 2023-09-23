@@ -1,8 +1,8 @@
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/defclique.cpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.cpp \
  /usr/include/stdc-predef.h \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/defclique.h \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/graph.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.h \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/graph.hpp \
  /usr/include/c++/11/cstdint \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -103,7 +103,7 @@ src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: \
  /usr/include/c++/11/bits/stl_heap.h \
  /usr/include/c++/11/bits/stl_tempbuf.h \
  /usr/include/c++/11/bits/uniform_int_dist.h \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/hash.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/hash.hpp \
  /usr/include/c++/11/cassert /usr/include/assert.h \
  /usr/include/c++/11/cstring /usr/include/string.h /usr/include/strings.h \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
@@ -124,7 +124,7 @@ src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/mmintrin.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/mm_malloc.h \
  /usr/include/c++/11/stdlib.h \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/fastio.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/fastio.hpp \
  /usr/include/c++/11/cstdio /usr/include/c++/11/string \
  /usr/include/c++/11/bits/stringfwd.h \
  /usr/include/c++/11/bits/char_traits.h \
@@ -163,7 +163,7 @@ src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/11/bits/charconv.h \
  /usr/include/c++/11/bits/basic_string.tcc \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/vertexset.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/vertexset.hpp \
  /usr/include/c++/11/sstream /usr/include/c++/11/istream \
  /usr/include/c++/11/ios /usr/include/c++/11/exception \
  /usr/include/c++/11/bits/exception_ptr.h \
@@ -187,12 +187,12 @@ src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: \
  /usr/include/c++/11/bits/ostream.tcc \
  /usr/include/c++/11/bits/istream.tcc \
  /usr/include/c++/11/bits/sstream.tcc \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/vertexset.hpp \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/ordering.hpp \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/linearheap.hpp \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/graph.hpp \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/coloring.hpp \
- /mnt/c/Users/98724/OneDrive/projs/defective\ clique/src/defclique/../utils/log.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/vertexset.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/ordering.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/linearheap.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/graph.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/coloring.hpp \
+ /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/../utils/log.hpp \
  /usr/include/c++/11/chrono /usr/include/c++/11/ratio \
  /usr/include/c++/11/limits /usr/include/c++/11/ctime \
  /usr/include/c++/11/bits/parse_numbers.h /usr/include/c++/11/iomanip \

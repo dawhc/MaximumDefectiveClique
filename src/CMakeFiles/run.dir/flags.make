@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/mnt/c/Users/98724/OneDrive/projs/defective clique/src/utils" -I"/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique"
+CXX_INCLUDES = -I/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/utils -I/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique
 
 CXX_FLAGS = -O3 -DNDEBUG -Wall -g -pg -O3 -march=native -std=gnu++11
 

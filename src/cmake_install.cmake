@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/c/Users/98724/OneDrive/projs/defective clique/src
+# Install script for directory: /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,8 +44,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/mnt/c/Users/98724/OneDrive/projs/defective clique/src/utils/cmake_install.cmake")
-  include("/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/cmake_install.cmake")
+  include("/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/utils/cmake_install.cmake")
+  include("/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/cmake_install.cmake")
 
 endif()
 

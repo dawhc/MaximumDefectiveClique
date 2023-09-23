@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/mnt/c/Users/98724/OneDrive/projs/defective clique"
+CMAKE_SOURCE_DIR = /mnt/c/Users/98724/OneDrive/projs/MumDefClique
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/mnt/c/Users/98724/OneDrive/projs/defective clique"
+CMAKE_BINARY_DIR = /mnt/c/Users/98724/OneDrive/projs/MumDefClique
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(CMAKE_COMMAND) -E cmake_progress_start "/mnt/c/Users/98724/OneDrive/projs/defective clique/CMakeFiles" "/mnt/c/Users/98724/OneDrive/projs/defective clique/src//CMakeFiles/progress.marks"
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/mnt/c/Users/98724/OneDrive/projs/defective clique/CMakeFiles" 0
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/98724/OneDrive/projs/MumDefClique/CMakeFiles /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src//CMakeFiles/progress.marks
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/98724/OneDrive/projs/MumDefClique/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/clean
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,22 +103,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/CMakeFiles/run.dir/rule:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/run.dir/rule
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/run.dir/rule
 .PHONY : src/CMakeFiles/run.dir/rule
 
 # Convenience name for target.
@@ -127,7 +127,7 @@ run: src/CMakeFiles/run.dir/rule
 
 # fast build rule for target.
 run/fast:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/build
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/build
 .PHONY : run/fast
 
 main.o: main.cpp.o
@@ -135,7 +135,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.o
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -143,7 +143,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.i
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -151,7 +151,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.s
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/run.dir/build.make src/CMakeFiles/run.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -177,6 +177,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

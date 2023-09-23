@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/defclique.cpp" "src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o" "gcc" "src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o.d"
+  "/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.cpp" "src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o" "gcc" "src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o.d"
   )
 
 # Targets to which this target links.

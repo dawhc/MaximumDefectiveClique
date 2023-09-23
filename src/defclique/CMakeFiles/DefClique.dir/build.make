@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/mnt/c/Users/98724/OneDrive/projs/defective clique"
+CMAKE_SOURCE_DIR = /mnt/c/Users/98724/OneDrive/projs/MumDefClique
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/mnt/c/Users/98724/OneDrive/projs/defective clique"
+CMAKE_BINARY_DIR = /mnt/c/Users/98724/OneDrive/projs/MumDefClique
 
 # Include any dependencies generated for this target.
 include src/defclique/CMakeFiles/DefClique.dir/depend.make
@@ -72,16 +72,16 @@ include src/defclique/CMakeFiles/DefClique.dir/flags.make
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: src/defclique/CMakeFiles/DefClique.dir/flags.make
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: src/defclique/defclique.cpp
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o: src/defclique/CMakeFiles/DefClique.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/mnt/c/Users/98724/OneDrive/projs/defective clique/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o"
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o -MF CMakeFiles/DefClique.dir/defclique.cpp.o.d -o CMakeFiles/DefClique.dir/defclique.cpp.o -c "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/defclique.cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/98724/OneDrive/projs/MumDefClique/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o"
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o -MF CMakeFiles/DefClique.dir/defclique.cpp.o.d -o CMakeFiles/DefClique.dir/defclique.cpp.o -c /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.cpp
 
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/DefClique.dir/defclique.cpp.i"
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/defclique.cpp" > CMakeFiles/DefClique.dir/defclique.cpp.i
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.cpp > CMakeFiles/DefClique.dir/defclique.cpp.i
 
 src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/DefClique.dir/defclique.cpp.s"
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/defclique.cpp" -o CMakeFiles/DefClique.dir/defclique.cpp.s
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/defclique.cpp -o CMakeFiles/DefClique.dir/defclique.cpp.s
 
 # Object files for target DefClique
 DefClique_OBJECTS = \
@@ -93,19 +93,19 @@ DefClique_EXTERNAL_OBJECTS =
 src/defclique/libDefClique.a: src/defclique/CMakeFiles/DefClique.dir/defclique.cpp.o
 src/defclique/libDefClique.a: src/defclique/CMakeFiles/DefClique.dir/build.make
 src/defclique/libDefClique.a: src/defclique/CMakeFiles/DefClique.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/mnt/c/Users/98724/OneDrive/projs/defective clique/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libDefClique.a"
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && $(CMAKE_COMMAND) -P CMakeFiles/DefClique.dir/cmake_clean_target.cmake
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/DefClique.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/Users/98724/OneDrive/projs/MumDefClique/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libDefClique.a"
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && $(CMAKE_COMMAND) -P CMakeFiles/DefClique.dir/cmake_clean_target.cmake
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/DefClique.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 src/defclique/CMakeFiles/DefClique.dir/build: src/defclique/libDefClique.a
 .PHONY : src/defclique/CMakeFiles/DefClique.dir/build
 
 src/defclique/CMakeFiles/DefClique.dir/clean:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" && $(CMAKE_COMMAND) -P CMakeFiles/DefClique.dir/cmake_clean.cmake
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique && $(CMAKE_COMMAND) -P CMakeFiles/DefClique.dir/cmake_clean.cmake
 .PHONY : src/defclique/CMakeFiles/DefClique.dir/clean
 
 src/defclique/CMakeFiles/DefClique.dir/depend:
-	cd "/mnt/c/Users/98724/OneDrive/projs/defective clique" && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" "/mnt/c/Users/98724/OneDrive/projs/defective clique" "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" "/mnt/c/Users/98724/OneDrive/projs/defective clique" "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique" "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/CMakeFiles/DefClique.dir/DependInfo.cmake" --color=$(COLOR)
+	cd /mnt/c/Users/98724/OneDrive/projs/MumDefClique && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /mnt/c/Users/98724/OneDrive/projs/MumDefClique /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique /mnt/c/Users/98724/OneDrive/projs/MumDefClique /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/CMakeFiles/DefClique.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/defclique/CMakeFiles/DefClique.dir/depend
 

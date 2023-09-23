@@ -8,12 +8,12 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/main.cpp" "src/CMakeFiles/run.dir/main.cpp.o" "gcc" "src/CMakeFiles/run.dir/main.cpp.o.d"
+  "/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/main.cpp" "src/CMakeFiles/run.dir/main.cpp.o" "gcc" "src/CMakeFiles/run.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique/CMakeFiles/DefClique.dir/DependInfo.cmake"
+  "/mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique/CMakeFiles/DefClique.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

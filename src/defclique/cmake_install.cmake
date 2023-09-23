@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/c/Users/98724/OneDrive/projs/defective clique/src/defclique
+# Install script for directory: /mnt/c/Users/98724/OneDrive/projs/MumDefClique/src/defclique
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
