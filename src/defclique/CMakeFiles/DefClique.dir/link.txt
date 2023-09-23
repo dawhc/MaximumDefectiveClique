@@ -1,2 +1,0 @@
-/usr/bin/ar qc libDefClique.a CMakeFiles/DefClique.dir/defclique.cpp.o
-/usr/bin/ranlib libDefClique.a
