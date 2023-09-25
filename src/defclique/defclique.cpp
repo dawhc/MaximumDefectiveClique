@@ -164,22 +164,6 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			}
 		}
 		// Prune C1
-		// for (int v : C1) {
-		// 	if (degC1[v] < Ss.size()-k-1) {
-		// 		sub(Core, C1, degC1, v);
-		// 		q.push(v);
-		// 	}
-		// }
-		// while (!q.empty()) {
-		// 	int v = q.front(); q.pop();
-		// 	for (int w : Core.nbr[v]) {
-		// 		if (degC1[w] < Ss.size()-k-1 && C1.inside(w)) {
-		// 			sub(Core, C1, degC1, w);
-		// 			q.push(w);
-		// 		}
-		// 	}
-		// }
-
 		while (true) {
 			bool flagBreak = true;
 			for (int v : C1) {
@@ -303,6 +287,7 @@ void defclique::russianDollSearch(Graph G, int k) {
 		nnbS = nnbSub = 0;
 
 		int u = o.ordered[i];
+
 		add(G, S, degS, u);
 
 		if (Ss.size() < k+1) {
@@ -315,25 +300,10 @@ void defclique::russianDollSearch(Graph G, int k) {
 					add(G, C1, degC1, v);
 				}
 			}
-			// for (int v : C1) {
-			// 	if (degC1[v] < Ss.size() - k) {
-			// 		sub(G, C1, degC1, v);
-			// 		q.push(v);
-			// 	}
-			// }
-			// while (!q.empty()) {
-			// 	int v = q.front(); q.pop();
-			// 	for (int w : G.nbr[v]) {
-			// 		if (degC1[w] < Ss.size() - k && C1.inside(w)) {
-			// 			sub(G, C1, degC1, w);
-			// 			q.push(w);
-			// 		}
-			// 	}
-			// }
 			while (true) {
 				bool flagBreak = true;
 				for (int v : C1) {
-					if (degC1[v] < Ss.size() - k) {
+					if (degC1[v] < Ss.size()-k) {
 						flagBreak = false;
 						sub(G, C1, degC1, v);
 					}
@@ -357,6 +327,7 @@ void defclique::russianDollSearch(Graph G, int k) {
 			nnbSub += Sub.V.size() - Sub.degree[v] - 1;
 
 		nnbSub >>= 1;
+
 		branch(0);
 	}
 
@@ -392,7 +363,6 @@ void defclique::reductionSearch(Graph G, int k) {
 	G = coreReduction(G, Ss.size() - k);
 	Ordering o = Ordering::degreeOrdering(G);
 	Coloring c = Coloring::graphColoring(G, Ss.size()-k+1);
-	std::queue<int> q;
 	std::vector<bool> vis(c.numColors);
 
 	log("Starting branch and reduction search...");
@@ -438,20 +408,30 @@ void defclique::reductionSearch(Graph G, int k) {
 					if (o.order[v] > i)
 						add(G, C1, degC1, v);
 				}
-				for (int v : C1) {
-					if (degC1[v] < Ss.size() - k) {
-						sub(G, C1, degC1, v);
-						q.push(v);
-					}
-				}
-				while (!q.empty()) {
-					int v = q.front(); q.pop();
-					for (int w : G.nbr[v]) {
-						if (degC1[w] < Ss.size()-k && C1.inside(w)) {
-							sub(G, C1, degC1, w);
-							q.push(w);
+				// for (int v : C1) {
+				// 	if (degC1[v] < Ss.size() - k) {
+				// 		sub(G, C1, degC1, v);
+				// 		q.push(v);
+				// 	}
+				// }
+				// while (!q.empty()) {
+				// 	int v = q.front(); q.pop();
+				// 	for (int w : G.nbr[v]) {
+				// 		if (degC1[w] < Ss.size()-k && C1.inside(w)) {
+				// 			sub(G, C1, degC1, w);
+				// 			q.push(w);
+				// 		}
+				// 	}
+				// }
+				while (true) {
+					bool flagBreak = true;
+					for (int v : C1) {
+						if (degC1[v] < Ss.size()-k) {
+							flagBreak = false;
+							sub(G, C1, degC1, v);
 						}
 					}
+					if (flagBreak) break;
 				}
 				for (int v : C1) {
 					add(G, C, degC, v);
@@ -523,8 +503,9 @@ void defclique::moveSToC(int v) {
 
 int defclique::updateC(int v) {
 	int posC = C.frontPos();
+	int sizeS = S.size() - (int)S.inside(v);
 	for (int u : C) {
-		if (u != v && nnbS + 2 * S.size()-degS[u]-degS[v] + (int)!Sub.connect(u, v) > k) {
+		if (u != v && nnbS + 2 * sizeS-degS[u]-degS[v] + (int)!Sub.connect(u, v) > k) {
 			sub(Sub, C, degC, u);
 			nnbSub -= S.size()-degS[u] + C.size()-degC[u];
 		}
@@ -542,18 +523,18 @@ void defclique::restoreC(int pos) {
 
 
 bool defclique::branch(int dep) {
-	int cntNnbSub = 0, cntNnbS = 0;
-	VertexSet V = S + C;
-	for (int u : V) {
-		for (int v : V) {
-			if (u < v && !Sub.connect(u, v)) {
-				++cntNnbSub;
-				if (S.inside(u) && S.inside(v))
-					++cntNnbS;
-			}
-		}
-	}
-	// log("Depth=%d, |S|=%d, |C|=%d, nnbS=%d(real=%d), nnbSub=%d(real=%d)", dep, S.size(), C.size(), nnbS, cntNnbS, nnbSub, cntNnbSub);
+	// int cntNnbSub = 0, cntNnbS = 0;
+	// VertexSet V = S + C;
+	// for (int u : V) {
+	// 	for (int v : V) {
+	// 		if (u < v && !Sub.connect(u, v)) {
+	// 			++cntNnbSub;
+	// 			if (S.inside(u) && S.inside(v))
+	// 				++cntNnbS;
+	// 		}
+	// 	}
+	// }
+	// log("Depth=%d, |S|=%d, |C|=%d, |C1|=%d, nnbS=%d(real=%d), nnbSub=%d(real=%d)", dep, S.size(), C.size(), C1.size(), nnbS, cntNnbS, nnbSub, cntNnbSub);
 	if (nnbSub <= k) {
 		if (S.size() + C.size() > Ss.size()) {
 			// log("New S*!");
@@ -670,23 +651,22 @@ bool defclique::branch(int dep) {
 				u = v;
 			}
 		}
-		for (int v : C) {
+
+		VertexSet Cand = C;
+		for (int v : Cand) {
 			if (S.size()-degS[u] + C.size()-degC[u] == 3) break;
 			if (v != u && !Sub.connect(u, v)) {
 				C1.pop(v);
+				int posC2 = updateC(v);
 				moveCToS(v);
 				if (branch(dep+1)) return true;
-				sub(Sub, S, degS, v);
-				nnbS -= S.size() - degS[v];
+				moveSToC(v);
+				restoreC(posC2);
+				sub(Sub, C, degC, v);
 				nnbSub -= S.size()-degS[v] + C.size()-degC[v];
-				// moveSToC(v);
 			}
 		}
 		if (S.size()-degS[u] + C.size()-degC[u] == 3) {
-			int v = u;
-			if (!C.inside(u)) {
-				u = v;
-			}
 			int posC2 = updateC(u);
 			moveCToS(u);
 			if (branch(dep+1)) return true;

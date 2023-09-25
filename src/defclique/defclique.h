@@ -3,6 +3,7 @@
 
 #include "../utils/graph.hpp"
 #include "../utils/vertexset.hpp"
+#include "../utils/ordering.hpp"
 #include <cstdint>
 #include <string>
 
