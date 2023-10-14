@@ -34,15 +34,18 @@ void defclique::logSet(VertexSet &V, const std::string &name) {
 }
 
 Graph defclique::coreReduction(Graph& G, int k) {
-	std::queue<int> q;
-	std::vector<bool> vis(G.n);
-	std::vector<int> deg(G.degree);
-
 	if (k <= 1) return G;
 
 	log("Running core reduction with k=%d...", k);
 
+	auto startTimePoint = std::chrono::steady_clock::now();
+
+	std::queue<int> q;
+	std::vector<bool> vis(G.n);
+	std::vector<int> deg(G.n);
+
 	for (int u : G.V) {
+		deg[u] = G.nbr[u].size();
 		if (deg[u] < k) {
 			vis[u] = true;
 			q.push(u);
@@ -70,16 +73,106 @@ Graph defclique::coreReduction(Graph& G, int k) {
 		}
 	}
 
-	log("Core reduction done!");
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (
+		std::chrono::steady_clock::now() - startTimePoint);
+
+	log("Core reduction done! Time spent: %ld ms", duration.count());
 	log("Before: n=%d, m=%d; After: n=%d, m=%d", G.V.size(), G.m, C.V.size(), C.m);
 
 	return C;
 }
 
+Graph defclique::edgeReduction(Graph &G, int k) {
+
+	log("Running edge reduction with k=%d...", k);
+
+	auto startTimePoint = std::chrono::steady_clock::now();
+
+	std::vector<int> cn(G.m), q(G.m);
+	std::vector<std::pair<int, int>> edges;
+	std::vector<std::unordered_map<int, int>> eid(G.n);	
+	std::vector<bool> vis(G.m);
+
+	edges.reserve(G.m);
+
+	int head = 0, tail = 0;
+
+	auto countCommonNeighbor = [&](int u, int v) {
+		int cnt = 0;
+		if (G.nbr[u] > G.nbr[v]) std::swap(u, v);
+		for (int w : G.nbr[u])
+			if (G.connect(v, w))
+				++cnt;
+		return cnt;
+	};
+
+	auto removeEdge = [&](int id) {
+		vis[id] = true;
+		// cn[id] = 0;
+		int u = edges[id].first, v = edges[id].second;
+		if (G.nbr[u] > G.nbr[v]) std::swap(u, v);
+		for (int w : G.nbr[u])
+			if (G.connect(v, w)) {
+				int i = eid[u][w], j = eid[v][w];
+				if (vis[i] || vis[j]) continue;
+				--cn[i], --cn[j];
+			}		
+	};
+
+	for (int u : G.V)
+		for (int v : G.nbr[u])
+			if (u < v) {
+				int i = edges.size();
+				eid[u][v] = eid[v][u] = i;
+				edges.push_back(std::make_pair(u, v));
+				cn[i] = countCommonNeighbor(u, v);
+				if (cn[i] < k) {
+					q[tail++] = i;
+					removeEdge(i);
+				}
+			}
+
+	while (head < tail) {
+		int i = q[head++];
+		int u = edges[i].first, v = edges[i].second;
+		if (G.nbr[u] > G.nbr[v]) std::swap(u, v);
+		for (int w : G.nbr[u]) {
+			if (G.connect(v, w)) {
+				int i = eid[u][w], j = eid[v][w];
+				if (!vis[i] && cn[i] < k) {
+					q[tail++] = i;
+					removeEdge(i);
+				}
+				if (!vis[j] && cn[j] < k) {
+					q[tail++] = j;
+					removeEdge(j);
+				}
+			}
+		}
+	}
+
+	Graph E;
+
+	for (int i = 0; i < edges.size(); ++i) {
+		if (vis[i]) continue;
+		E.addEdge(edges[i].first, edges[i].second);
+	}
+
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (
+		std::chrono::steady_clock::now() - startTimePoint);
+
+	log("Edge reduction done! Time spent: %ld ms", duration.count());
+	log("Before: n=%d, m=%d; After: n=%d, m=%d", G.V.size(), G.m, E.V.size(), E.m);
+
+	return E;
+
+}
+
 Graph defclique::subGraph(Graph &G, VertexSet S) {
+	// Graph Sub(*std::max_element(S.begin(), S.end()) + 1);
 	Graph Sub;
 	for (int u : S) {
-		if (S.size() < G.degree[u]) {
+		if (S.size() < G.nbr[u].size()) {
 			for (int v : S)
 				if (u < v && G.connect(u, v)) {
 					Sub.addEdge(u, v);
@@ -104,7 +197,8 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 	S.clear();
 	std::vector<int>(G.n).swap(degS);
 
-	std::queue<int> q;
+	// std::queue<int> q;
+	std::vector<int> q(G.n);
 
 	Ordering o = Ordering::degeneracyOrdering(G);
 	int u = o.ordered[o.numOrdered - 1];
@@ -119,19 +213,8 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 				C.push(w);
 	}
 
-	std::vector<int> N2(C.begin(), C.end());
-
-	auto compByDegree = [&] (const int& u, const int& v) {
-		return G.degree[u] > G.degree[v];
-	};
-
-	auto compByCore = [&] (const int& u, const int& v) {
-		return o.order[u] > o.order[v];
-	};
-
-	std::sort(N2.begin(), N2.end(), compByCore);
-
-	for (int v : N2) {
+	for (int i = o.numOrdered - 1; i >= 0; --i) {
+		int v = o.ordered[i];
 		nnbS += S.size() - degS[v];
 		if (nnbS > k) break;
 		add(G, S, degS, v);
@@ -163,32 +246,54 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 				add(Core, C1, degC1, v);
 			}
 		}
-		// Prune C1
-		while (true) {
-			bool flagBreak = true;
-			for (int v : C1) {
-				if (degC1[v] < Ss.size() - k) {
-					flagBreak = false;
-					sub(Core, C1, degC1, v);
-				}
+
+		int head = 0, tail = 0;
+
+		for (int v : C1) {
+			if (degC1[v] < Ss.size()-k-1) {
+				q[tail++] = v;
+				sub(Core, C1, degC1, v);
+				// C1.pop(v);
 			}
-			if (flagBreak) break;
+		}
+
+		while (head < tail) {
+			int v = q[head++];
+			if (C1.size() < Core.nbr[v].size()) {
+				for (int w : C1)
+					if (G.connect(v, w) && degC1[w] < Ss.size()-k-1) {
+						q[tail++] = w;
+						sub(Core, C1, degC1, w);
+					}
+			}
+			else {
+				for (int w : Core.nbr[v])
+					if (C1.inside(w) && degC1[w] < Ss.size()-k-1) {
+						q[tail++] = w;
+						sub(Core, C1, degC1, w);
+					}
+			}
 		}
 
 		// Construct C2
 		for (int v : C1) {
 			for (int w : Core.nbr[v]) {
 				if (o.order[w] > i && !C1.inside(w) && degC1[w] >= Ss.size()-k) {
-					add(Core, C, degC, w);
+					C.push(w);
 				}
 			}
 		}	
 
 		Sub = subGraph(Core, S + C1 + C);
+		if (Sub.V.size() == 0) continue;
+		for (int v : C)
+			for (int w : Sub.nbr[v])
+				++degC[w];
+
 		Ordering oSub = Ordering::degeneracyOrdering(Sub);
 		for (int v : Sub.V)
 			// nnbSub += S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v] - 1;
-			nnbSub += Sub.V.size() - Sub.degree[v] - 1;
+			nnbSub += Sub.V.size() - Sub.nbr[v].size() - 1;
 
 		nnbSub >>= 1;
 
@@ -269,8 +374,10 @@ void defclique::russianDollSearch(Graph G, int k) {
 	Ss = heuristic(G, k);
 	Graph Raw = G;
 	G = coreReduction(G, Ss.size() - k);
+	G = edgeReduction(G, Ss.size() - k - 1);
 	Ordering o = Ordering::degeneracyOrdering(G);
-	std::queue<int> q;
+	// std::queue<int> q;
+	std::vector<int> q(G.n);
 
 	log("Running russian doll search...");
 
@@ -288,11 +395,13 @@ void defclique::russianDollSearch(Graph G, int k) {
 
 		int u = o.ordered[i];
 
+		// S.push(u);
 		add(G, S, degS, u);
 
 		if (Ss.size() < k+1) {
 			for (int j = i+1; j < o.numOrdered; ++j)
-				add(G, C, degC, o.ordered[j]);
+				C.push(o.ordered[j]);
+				// add(G, C, degC, o.ordered[j]);
 		}
 		else {
 			for (int v : G.nbr[u]) {
@@ -300,31 +409,56 @@ void defclique::russianDollSearch(Graph G, int k) {
 					add(G, C1, degC1, v);
 				}
 			}
-			while (true) {
-				bool flagBreak = true;
-				for (int v : C1) {
-					if (degC1[v] < Ss.size()-k) {
-						flagBreak = false;
-						sub(G, C1, degC1, v);
-					}
-				}
-				if (flagBreak) break;
-			}
+
+			int head = 0, tail = 0;
 			for (int v : C1) {
-				add(G, C, degC, v);
+				if (degC1[v] < Ss.size()-k) {
+					q[tail++] = v;
+					// C1.pop(v);
+					sub(G, C1, degC1, v);
+				}
+			}
+			while (head < tail) {
+				int v = q[head++];
+				if (C1.size() < G.nbr[v].size()) {
+					for (int w : C1) 
+						if (degC1[w] < Ss.size()-k && G.connect(v, w)) {
+							// C1.pop(w);
+							q[tail++] = w;
+							sub(G, C1, degC1, w);
+						}
+				}
+				else {
+					for (int w : G.nbr[v])
+						if (degC1[w] < Ss.size()-k && C1.inside(w)) {
+							// C1.pop(w);
+							q[tail++] = w;
+							sub(G, C1, degC1, w);
+						}
+				}
+			}
+
+			
+			for (int v : C1) {
+				C.push(v);
 				for (int w : G.nbr[v]) {
-					if (o.order[w] > i && degC1[w] > Ss.size()-k) {
-						add(G, C, degC, w);
+					if (o.order[w] > i && !C1.inside(w)) {
+						if (degC1[w] > Ss.size()-k)
+							C.push(v);
 					}
 				}
 			}
 		}
 
 		Sub = subGraph(G, S + C);
+		if (Sub.V.size() == 0) continue;
+		for (int v : C)
+			for (int w : Sub.nbr[v])
+				++degC[w];
 		clr = Coloring::graphColoring(Sub, Ss.size()-k+1);
 		for (int v : Sub.V) 
 			// nnbSub += S.size()-degS[v] + C.size()-degC[v]-1;
-			nnbSub += Sub.V.size() - Sub.degree[v] - 1;
+			nnbSub += Sub.V.size() - Sub.nbr[v].size() - 1;
 
 		nnbSub >>= 1;
 
@@ -447,7 +581,7 @@ void defclique::reductionSearch(Graph G, int k) {
 		clr = Coloring::graphColoring(Sub, Ss.size()-k+1);
 		for (int v : Sub.V) 
 			// nnbSub += S.size()-degS[v] + C.size()-degC[v]-1;
-			nnbSub += Sub.V.size() - Sub.degree[v] - 1;
+			nnbSub += Sub.V.size() - Sub.nbr[v].size() - 1;
 		nnbSub >>= 1;
 		branch(0);
 

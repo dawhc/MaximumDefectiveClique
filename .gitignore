@@ -12,7 +12,8 @@ CTestTestfile.cmake
 _deps
 
 # gprof
-gmon.out
+gmon.out*
+gprof.out*
 
 #Other
 test.*

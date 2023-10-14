@@ -149,13 +149,13 @@ private:
 
 public:
 	CuckooHash(/* args */) {
-		capacity = 0;
-		//hashtable = NULL;
-		mask = 0;
-		size = 0;
+		clear();
 	}
 	~CuckooHash() {
 		// if (hashtable) delete[] hashtable;
+	}
+	void clear() {
+		capacity = mask = size = 0;
 	}
 
 	void reserve(int size) {
@@ -169,14 +169,14 @@ public:
 		// memset(hashtable, unfilled, sizeof(int) * capacity);
 	}
 
-	void insert(const int &u) {
+	void insert(int u) {
 		if (size == capacity) rehash(hashtable);
 		if (find(u)) return;
 		insert(u, hashtable);
 		size++;
 	}
 
-	bool find(const int &u) const {
+	bool find(int u) const {
 		if (size == 0) return false;
 		int hs1 = hash1(u);
 		int hs2 = hash2(u);
@@ -190,6 +190,27 @@ public:
         __m128i flag = _mm_or_si128(_mm_cmpeq_epi32(cmp, b1), _mm_cmpeq_epi32(cmp, b2));
 
 		return _mm_movemask_epi8(flag) != 0;
+	}
+	void remove(int u) {
+		if (size == 0) return;
+		int hs1 = hash1(u);
+		int hs2 = hash2(u);
+		int* hashtable_ptr = hashtable.data();
+	
+		assert(buff_size == 4 && sizeof(int) == 4);
+		__m128i cmp = _mm_set1_epi32(u);
+		__m128i b1 = _mm_load_si128((__m128i*)&hashtable_ptr[buff_size * hs1]);
+		__m128i b2 = _mm_load_si128((__m128i*)&hashtable_ptr[buff_size * hs2]);
+		__m128i flag1 = _mm_cmpeq_epi32(cmp, b1);
+		__m128i flag2 = _mm_cmpeq_epi32(cmp, b2);
+		if (_mm_movemask_epi8(flag1) != 0) {
+			__m128i data = _mm_or_si128(b1, flag1);
+			_mm_store_si128((__m128i*)&hashtable_ptr[buff_size * hs1], data);
+		}
+		else if (_mm_movemask_epi8(flag2) != 0) {
+			__m128i data = _mm_or_si128(b2, flag2);
+			_mm_store_si128((__m128i*)&hashtable_ptr[buff_size * hs2], data);
+		}
 	}
 	int getcapacity() {return capacity;}
 	int getsize() {return size;}

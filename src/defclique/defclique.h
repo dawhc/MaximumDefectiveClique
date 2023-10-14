@@ -10,6 +10,7 @@
 namespace defclique {
 	void logSet(VertexSet &V, const std::string &name);
 	Graph coreReduction(Graph &G, int k);
+	Graph edgeReduction(Graph &G, int k);
 	Graph subGraph(Graph &G, VertexSet V);
 	VertexSet heuristic(Graph &G, int k);
 	int upperbound();

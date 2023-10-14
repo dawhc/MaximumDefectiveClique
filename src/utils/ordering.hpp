@@ -25,7 +25,7 @@ public:
 	}
 	static Ordering degeneracyOrdering(Graph &G) {
 		Ordering o(G.n);
-		LinearHeap vHeap(G.V, G.degree);
+		LinearHeap vHeap(G.V, [&](int v) { return (int)G.nbr[v].size(); });
 
 		while (!vHeap.empty()) {
 			int u = vHeap.top(); 
@@ -43,7 +43,7 @@ public:
 		std::vector<std::vector<int>> bin(G.maxDeg + 1);
 
 		for (int u : G.V)
-			bin[G.degree[u]].push_back(u);
+			bin[G.nbr[u].size()].push_back(u);
 		for (int d = 0; d <= G.maxDeg; ++d) {
 			for (int u : bin[d])
 				o.push(u, d);

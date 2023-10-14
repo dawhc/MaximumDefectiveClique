@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <functional>
 
 class LinearHeap {
 	std::vector<int> rank, pos, bin;
@@ -47,10 +48,29 @@ public:
 	LinearHeap(const VertexSet& V, const std::vector<int>& values)
 		: pos(V.size() + 1), keys(V.begin(), V.end()), vals(values), ptr(0)
 	{
-		int maxValue = 0, maxKey = 0;
+		int maxValue = 0, maxKey = keys.empty() ? 0 : *std::max_element(keys.begin(), keys.end());
 		for (int k : keys) {
 			maxValue = std::max(maxValue, vals[k]);
 			maxKey = std::max(maxKey, k);
+		}
+		bin.resize(maxValue + 2);
+		rank.resize(maxKey + 1);
+		for (int k : V) ++bin[vals[k]+1];
+		for (int v = 1; v <= maxValue; ++v) bin[v] += bin[v-1];
+		for (int k : V) {
+			rank[k] = bin[vals[k]]++;
+			pos[rank[k]] = k;
+		}
+	}
+
+	LinearHeap(const VertexSet &V, const std::function<int(int)> &valueFunc)
+	: pos(V.size() + 1), keys(V.begin(), V.end()), ptr(0)
+	{
+		int maxValue = 0, maxKey = keys.empty() ? 0 : *std::max_element(keys.begin(), keys.end());
+		vals.resize(maxKey + 1);
+		for (int k : keys) {
+			vals[k] = valueFunc(k);
+			maxValue = std::max(maxValue, vals[k]);
 		}
 		bin.resize(maxValue + 2);
 		rank.resize(maxKey + 1);

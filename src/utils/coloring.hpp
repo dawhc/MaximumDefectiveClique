@@ -40,7 +40,7 @@ public:
 				if (c.color[v] != uncolored)
 					vis[c.color[v]] = true;
 			}
-			for (int i = 0; i <= G.degree[u]; ++i) {
+			for (int i = 0; i <= G.nbr[u].size(); ++i) {
 				if (!vis[i]) {
 					c.colorVertex(u, i);
 					break;
