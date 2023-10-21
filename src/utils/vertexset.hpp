@@ -19,8 +19,9 @@ class VertexSet {
 	}
 
 public:
-	VertexSet(int capacity) {
-		reserve(capacity);
+	VertexSet(int n) {
+		capacity = 0;
+		reserve(n);
 		clear();
 	}
 
@@ -43,17 +44,16 @@ public:
 	}
 
 	void push(int v) {
+		if (v >= capacity) reserve(v << 1);
 		if (pos[v] < lp) pushFront(v);
 		else if (pos[v] >= rp) pushBack(v);
 	}
 
 	void pushFront(int v) {
-		assert(lp > 0);
 		if (pos[v] < lp) swapByPos(pos[v], --lp);
 	}
 
 	void pushBack(int v) {
-		assert(rp < capacity);
 		if (pos[v] >= rp) swapByPos(pos[v], rp++);
 	}
 
@@ -71,7 +71,7 @@ public:
 
 
 	bool inside(int v) const {
-		return pos[v] >= lp && pos[v] < rp;
+		return v < capacity && pos[v] >= lp && pos[v] < rp;
 	}
 
   int size() const {

@@ -11,11 +11,11 @@ namespace defclique {
 	void logSet(VertexSet &V, const std::string &name);
 	Graph coreReduction(Graph &G, int k);
 	Graph edgeReduction(Graph &G, int k);
-	Graph subGraph(Graph &G, VertexSet V);
+	void preprocessing(Graph &G, Ordering &o, int u);
 	VertexSet heuristic(Graph &G, int k);
 	int upperbound();
-	void russianDollSearch(Graph G, int k);
-	void reductionSearch(Graph G, int k);
+	void russianDollSearch(Graph &G, int k);
+	void reductionSearch(Graph &G, int k);
 	void moveCToS(int v);
 	void moveSToC(int v);
 	int updateC(int v);
@@ -23,6 +23,8 @@ namespace defclique {
 	bool branch(int dep);
 	void add(Graph &G, VertexSet &V, std::vector<int> &degV, int v);
 	void sub(Graph &G, VertexSet &V, std::vector<int> &degV, int v);
+	void addSub(Graph &G, VertexSet &Sub, VertexSet &V, std::vector<int> &degV, int v);
+	void subSub(Graph &G, VertexSet &Sub, VertexSet &V, std::vector<int> &degV, int v);
 }
 
 #endif // DEFCLIQUE_H

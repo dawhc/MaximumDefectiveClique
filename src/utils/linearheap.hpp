@@ -10,70 +10,105 @@
 class LinearHeap {
 	std::vector<int> rank, pos, bin;
 	std::vector<int> keys, vals;
-	int ptr;
-public:
+	int ptr, capKey, capVal;
 
-	LinearHeap(const std::vector<int>& values)
-		: rank(values.size() + 1), pos(values.size() + 1), keys(values.size() + 1), vals(values), ptr(0) 
-	{
-		int maxValue = vals.empty() ? 0 : *std::max_element(vals.begin(), vals.end());
-		bin.resize(maxValue + 2);
-		for (int v : vals) ++bin[v+1];
+	void resizeKey(int capacity) {
+		capKey = capacity;
+		pos.resize(capacity + 1);
+		rank.resize(capacity);
+		// keys.resize(capacity);
+		vals.resize(capacity);
+	}
+	void resizeVal(int capacity) {
+		capVal = capacity;
+		bin.resize(capacity + 2);
+	}
+public:
+	LinearHeap(): ptr(0), capKey(0), capVal(0) {}
+	LinearHeap(const std::vector<int> &values): capKey(0), capVal(0) {
+		build(values);
+	}
+
+	void build(const std::vector<int> &values) {
+		if (values.size() > capKey) resizeKey(values.size());
+		ptr = 0;
+		int maxValue = 0;
+		for (int i = 0; i < values.size(); ++i) { 
+			keys[i] = i;
+			vals[i] = values[i];
+			maxValue = std::max(maxValue, vals[i]); 
+		}
+		// if (capVal < maxValue) resizeVal(maxValue);
+		bin.assign(maxValue + 2, 0);
+		for (int v : values) ++bin[v+1];
 		for (int v = 1; v <= maxValue; ++v) bin[v] += bin[v-1];
 		for (int i = 0; i < vals.size(); ++i) {
-			rank[i] = bin[vals[i]]++;
+			rank[i] = bin[values[i]]++;
 			pos[rank[i]] = i;
-			keys[i] = i;
 		}
 	}
 
-	LinearHeap(const std::vector<int>& keys, const std::vector<int>& values)
-		: pos(keys.size() + 1), keys(keys), vals(values), ptr(0)
-	{
+	LinearHeap(const std::vector<int> &keys, const std::vector<int> &values) {
+		build(keys, values);
+	}
+	void build(const std::vector<int> &keys, const std::vector<int> &values) {
+		this->keys.assign(keys.begin(), keys.end());
+		ptr = 0;
 		int maxValue = 0, maxKey = 0;
 		for (int k : keys) {
 			maxValue = std::max(maxValue, vals[k]);
 			maxKey = std::max(maxKey, k);
 		}
-		bin.resize(maxValue + 2);
-		rank.resize(maxKey + 1);
-		for (int k : keys) ++bin[vals[k]+1];
+		if (maxKey >= capKey) resizeKey(maxKey+1);
+		bin.assign(maxValue + 2, 0);
+		for (int k : keys) ++bin[values[k]+1];
 		for (int v = 1; v <= maxValue; ++v) bin[v] += bin[v-1];
 		for (int k : keys) {
-			rank[k] = bin[vals[k]]++;
+			vals[k] = values[k];
+			rank[k] = bin[values[k]]++;
 			pos[rank[k]] = k;
 		}
 	}
 
-	LinearHeap(const VertexSet& V, const std::vector<int>& values)
-		: pos(V.size() + 1), keys(V.begin(), V.end()), vals(values), ptr(0)
-	{
-		int maxValue = 0, maxKey = keys.empty() ? 0 : *std::max_element(keys.begin(), keys.end());
+	LinearHeap(const VertexSet &V, const std::vector<int> &values) {
+		build(V, values);
+	}
+
+	void build(const VertexSet &V, const std::vector<int> &values) {
+		keys.assign(V.begin(), V.end());
+		ptr = 0;
+		int maxValue = 0, maxKey = 0;
 		for (int k : keys) {
-			maxValue = std::max(maxValue, vals[k]);
+			maxValue = std::max(maxValue, values[k]);
 			maxKey = std::max(maxKey, k);
 		}
-		bin.resize(maxValue + 2);
-		rank.resize(maxKey + 1);
-		for (int k : V) ++bin[vals[k]+1];
+		bin.assign(maxValue + 2, 0);
+		if (maxKey >= capKey) resizeKey(maxKey+1);
+		for (int k : V) ++bin[values[k]+1];
 		for (int v = 1; v <= maxValue; ++v) bin[v] += bin[v-1];
 		for (int k : V) {
-			rank[k] = bin[vals[k]]++;
+			vals[k] = values[k];
+			rank[k] = bin[values[k]]++;
 			pos[rank[k]] = k;
 		}
 	}
 
-	LinearHeap(const VertexSet &V, const std::function<int(int)> &valueFunc)
-	: pos(V.size() + 1), keys(V.begin(), V.end()), ptr(0)
-	{
-		int maxValue = 0, maxKey = keys.empty() ? 0 : *std::max_element(keys.begin(), keys.end());
-		vals.resize(maxKey + 1);
+	LinearHeap(const VertexSet &V, const std::function<int(int)> &valueFunc) {
+		build(V, valueFunc);
+	}
+
+	void build(const VertexSet &V, const std::function<int(int)> &valueFunc) {
+		keys.assign(V.begin(), V.end());
+		ptr = 0;
+		int maxValue = 0, maxKey = 0;
+		for (int k : V) { maxKey = std::max(maxKey, k); }
+		if (maxKey >= capKey) resizeKey(maxKey+1);
 		for (int k : keys) {
 			vals[k] = valueFunc(k);
 			maxValue = std::max(maxValue, vals[k]);
 		}
-		bin.resize(maxValue + 2);
-		rank.resize(maxKey + 1);
+		// if (maxValue > capVal) resizeVal(maxValue+1);
+		bin.assign(maxValue + 2, 0);
 		for (int k : V) ++bin[vals[k]+1];
 		for (int v = 1; v <= maxValue; ++v) bin[v] += bin[v-1];
 		for (int k : V) {

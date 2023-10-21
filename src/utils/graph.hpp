@@ -2,6 +2,7 @@
 #define GRAPH_HPP
 
 #include <cstdint>
+#include <initializer_list>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
@@ -10,17 +11,17 @@
 #include "vertexset.hpp"
 
 struct Graph {
-	int n, m, maxDeg;
+	int n, m, maxDeg, capacity;
 	std::vector<CuckooHash> nbrMap;
 	std::vector<std::vector<int>> nbr;
 	VertexSet V;
 
 	Graph() {
-		n = m = maxDeg = 0;
+		n = m = maxDeg = capacity = 0;
 	}
 
-	Graph(int n): n(n) {
-		m = maxDeg = 0;
+	Graph(int n): capacity(n) {
+		n = m = maxDeg = 0;
 		resize(n);
 	}
 
@@ -32,10 +33,11 @@ struct Graph {
 		std::vector<std::vector<int>>().swap(nbr);
 		std::vector<CuckooHash>().swap(nbrMap);
 		V.clear();
-		n = m = maxDeg = 0;
+		n = m = maxDeg = capacity = 0;
 	}
 
 	void resize(int size) {
+		capacity = size;
 		nbr.resize(size);
 		nbrMap.resize(size);
 		V.reserve(size);
@@ -55,10 +57,9 @@ struct Graph {
 	}
 
 	void addEdge(int u, int v) {
-		if (std::max(u, v) >= n) {
-			n = std::max(u, v) + 1;
-			resize(n);
-		} 
+		int x = std::max(u, v) + 1;
+		n = std::max(n, x);
+		if (x > capacity) resize(x);
 		V.push(u);
 		V.push(v);
 		if (nbrMap[u].find(v)) return;
@@ -73,6 +74,58 @@ struct Graph {
 
 	bool connect(int u, int v) const {
 		return nbrMap[u].find(v);
+	}
+
+	void addVertices(const VertexSet& S) {
+		for (int v : S) {
+			V.push(v);
+		}
+	}
+
+	template<typename... Args>
+	void addVertices(const VertexSet& S, const Args&... Ss) {
+		addVertices(S);
+		addVertices(Ss...);
+	}
+
+
+	template<typename... Args>
+	void subGraph(Graph &G, const Args&... Ss) {
+
+		auto add_edge = [this](int u, int v) {
+			++m;
+			nbr[u].push_back(v);
+			nbr[v].push_back(u);
+		};
+
+		n = m = 0;
+		V.clear();
+
+		addVertices(Ss...);
+
+		for (int u : V) {
+			n = std::max(n, u + 1);
+			if (u < capacity) nbr[u].clear();
+		}
+
+		if (n > capacity) {
+			capacity = n;
+			nbr.resize(n);
+		}
+
+		for (int u : V) {
+			if (V.size() < G.nbr[u].size()) {
+				for (int v : V)
+					if (u < v && G.connect(u, v))
+						add_edge(u, v);
+			}
+			else {
+				for (int v : G.nbr[u])
+					if (u < v && V.inside(v))
+						add_edge(u, v);
+			}
+		}
+
 	}
 };
 

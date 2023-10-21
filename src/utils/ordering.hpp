@@ -9,13 +9,12 @@
 #include <vector>
 
 class Ordering {
+	LinearHeap vHeap;
 public:
 	std::vector<int> order, ordered, value;
-	int numOrdered;
-	Ordering(int size) {
-		order.resize(size);
-		ordered.resize(size);
-		value.resize(size);
+	int numOrdered, capacity;
+	Ordering(int size=0):capacity(0) {
+		resize(size);
 		numOrdered = 0;
 	}
 	void push(int u, int val) {
@@ -23,10 +22,16 @@ public:
 		order[u] = numOrdered++;
 		value[u] = val;
 	}
-	static Ordering degeneracyOrdering(Graph &G) {
-		Ordering o(G.n);
-		LinearHeap vHeap(G.V, [&](int v) { return (int)G.nbr[v].size(); });
-
+	void resize(int size) {
+		capacity = size;
+		order.resize(size);
+		ordered.resize(size);
+		value.resize(size);
+	}
+	void degeneracyOrdering(Graph &G) {
+		if (capacity < G.n) resize(G.n);
+		vHeap.build(G.V, [&](int v) { return (int)G.nbr[v].size(); });
+		numOrdered = 0;
 		while (!vHeap.empty()) {
 			int u = vHeap.top(); 
 			vHeap.pop();
@@ -34,20 +39,27 @@ public:
 				if (vHeap[v] <= vHeap[u]) continue;
 				if (vHeap.inside(v)) vHeap.dec(v);
 			}
-			o.push(u, vHeap[u]);
+			push(u, vHeap[u]);
 		}
+	}
+	void degreeOrdering(Graph &G) {
+		if (capacity < G.n) resize(G.n);
+		vHeap.build(G.V, [&](int v) { return (int)G.nbr[v].size(); });
+		numOrdered = 0;
+		while (!vHeap.empty()) {
+			int u = vHeap.top();
+			vHeap.pop();
+			push(u, vHeap[u]);
+		}
+	}
+	static Ordering DegeneracyOrdering(Graph &G) {
+		Ordering o;
+		o.degeneracyOrdering(G);
 		return o;
 	}
-	static Ordering degreeOrdering(Graph &G) {
-		Ordering o(G.n);
-		std::vector<std::vector<int>> bin(G.maxDeg + 1);
-
-		for (int u : G.V)
-			bin[G.nbr[u].size()].push_back(u);
-		for (int d = 0; d <= G.maxDeg; ++d) {
-			for (int u : bin[d])
-				o.push(u, d);
-		}
+	static Ordering DegreeOrdering(Graph &G) {
+		Ordering o;
+		o.degreeOrdering(G);
 		return o;
 	}
 	// static Ordering colorOrdering(Graph &G, int tau) {
