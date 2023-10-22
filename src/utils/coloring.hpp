@@ -70,7 +70,7 @@ public:
 
 			// Recoloring
 			if (color[u] >= tau) {
-				for (int i = 0; i < tau; ++i) bin.clear();
+				for (int i = 0; i < tau; ++i) bin[i].clear();
 				for (int v : G.nbr[u]) {
 					if (color[v] != uncolored && color[v] < tau)
 						bin[color[v]].push_back(v);

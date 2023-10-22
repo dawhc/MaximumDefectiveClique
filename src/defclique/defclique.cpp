@@ -6,11 +6,10 @@
 #include <cstdint>
 #include <ratio>
 #include <vector>
-#include <queue>
 #include <cstdio>
 #include <sstream>
 
-// #define EDGE_REDUCTION
+#define EDGE_REDUCTION
 
 
 namespace defclique {
@@ -43,7 +42,7 @@ Graph defclique::coreReduction(Graph& G, int k) {
 
 	auto startTimePoint = std::chrono::steady_clock::now();
 
-	std::queue<int> q;
+	int head = 0, tail = 0;
 	std::vector<bool> vis(G.n);
 	std::vector<int> deg(G.n);
 
@@ -51,17 +50,17 @@ Graph defclique::coreReduction(Graph& G, int k) {
 		deg[u] = G.nbr[u].size();
 		if (deg[u] < k) {
 			vis[u] = true;
-			q.push(u);
+			q[tail++] = u;
 		}
 	}
 
-	while (!q.empty()) {
-		int u = q.front(); q.pop();
+	while (head < tail) {
+		int u = q[head++];
 		for (int v : G.nbr[u]) {
 			if (vis[v]) continue;
 			if (--deg[v] < k) {
 				vis[v] = true;
-				q.push(v);
+				q[tail++] = v;
 			}
 		}
 	}
@@ -211,7 +210,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 		int v = q[head++];
 		if (Sub.nbr[v].size() < C1.size()) {
 			for (int w : Sub.nbr[v]) {
-				if (C1.inside(w) && degC1[w] < Ss.size()-k-1) {
+				if (C1.inside(w) && degC1[w] < Ss.size()-k) {
 					q[tail++] = w;
 					sub(Sub, C1, degC1, w);
 				}
@@ -219,7 +218,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 		}
 		else {
 			for (int w : C1)
-				if (Sub.connect(v, w) && degC1[w] < Ss.size()-k-1) {
+				if (Sub.connect(v, w) && degC1[w] < Ss.size()-k) {
 					q[tail++] = w;
 					sub(Sub, C1, degC1, w);
 				}
@@ -289,12 +288,13 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 	auto startTimePoint = std::chrono::steady_clock::now();
 
+	Ordering o, oSub;
+
+#ifndef HEURISTIC_V2
 	S.clear();
 	C.clear();
 	std::vector<int>(G.n).swap(degS);
 
-	// std::queue<int> q;
-	Ordering o, oSub;
 
 	o.degeneracyOrdering(G);
 	int u = o.ordered[o.numOrdered - 1];
@@ -324,6 +324,10 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 	logSet(Ss, "Initial S*");
 
 	Graph Core = coreReduction(G, Ss.size() - k);
+#else
+	Graph Core = G;
+#endif
+
 	o.degeneracyOrdering(Core);
 
 	for (int i = o.numOrdered-1; i >= 0; --i) {
@@ -352,15 +356,39 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			C1.inside(u) ? sub(Sub, C1, degC1, u) : sub(Sub, C, degC, u);
 
 			// Prune C1 & C2 
+			int head = 0, tail = 0;
 			for (int v : C1) {
-				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k) {
+				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
 					sub(Sub, C1, degC1, v);
 					nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
+					q[tail++] = v;
+				}
+			}
+
+			while (head < tail) {
+				int v = q[head++];
+				if (Sub.nbr[v].size() < C1.size()) {
+					for (int w : Sub.nbr[v]) {
+						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && C1.inside(w)) {
+							sub(Sub, C1, degC1, w);
+							nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
+							q[tail++] = w;
+						}
+					}
+				}
+				else {
+					for (int w : C1) {
+						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && Sub.connect(v, w)) {
+							sub(Sub, C1, degC1, w);
+							nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
+							q[tail++] = w;
+						}
+					}
 				}
 			}
 
 			for (int v : C) {
-				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k) {
+				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
 					sub(Sub, C, degC, v);
 					nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
 				}
@@ -369,7 +397,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			bool flagBreak = false;
 
 			for (int v : S) {
-				if (degS[v]+degC1[v] < Ss.size()-k) {
+				if (degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
 					C1.clear();
 					C.clear();
 					flagBreak = true;
@@ -402,6 +430,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 	
 }
 
+
 void defclique::russianDollSearch(Graph &G, int k) {
 	S.reserve(G.n);
 	C.reserve(G.n);
@@ -427,7 +456,6 @@ void defclique::russianDollSearch(Graph &G, int k) {
 	Core = edgeReduction(Core, Ss.size() - k - 1);
 #endif
 	Ordering o = Ordering::DegeneracyOrdering(Core);
-	// std::queue<int> q;
 
 	log("Running russian doll search...");
 
