@@ -5,7 +5,7 @@
 #include <string>
 
 class FastIO {
-	const int PAGESIZE = 1<<12;
+	const int PAGESIZE = 1<<20;
 	char *buf, *sp, *tp;
 	FILE *_f;
 
@@ -46,6 +46,7 @@ public:
 		char c;
 		unsigned int val = 0;
 		for (c = getChar(); isspace(c); c = getChar());
+		if (c == EOF) return 0;
 		for (; !isspace(c); c = getChar())
 			val = (val<<1) + (val<<3) + (c-'0');
 		return val;
@@ -54,6 +55,7 @@ public:
 		char c;
 		int val = 0, sign = 1;
 		for (c = getChar(); isspace(c); c = getChar());
+		if (c == EOF) return 0;
 		if (c == '-') sign = -1;
 		for (; !isspace(c); c = getChar())
 			val = (val<<1) + (val<<3) + (c-'0');

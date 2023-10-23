@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <sstream>
 
-#define EDGE_REDUCTION
+// #define EDGE_REDUCTION
 
 
 namespace defclique {
@@ -19,6 +19,7 @@ namespace defclique {
 	VertexSet S, C, Ss, C1, D;
 	std::vector<int> degC1, degC, degS, cnD;
 	std::vector<int> q;
+	int mode;
 }
 
 void defclique::logSet(VertexSet &V, const std::string &name) {
@@ -431,7 +432,8 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 }
 
 
-void defclique::russianDollSearch(Graph &G, int k) {
+void defclique::run(Graph &G, int k, int mode) {
+
 	S.reserve(G.n);
 	C.reserve(G.n);
 	C1.reserve(G.n);
@@ -444,43 +446,65 @@ void defclique::russianDollSearch(Graph &G, int k) {
 	cnD.resize(G.n);
 	q.resize(G.n);
 
-	defclique::k = k;
-
 	Sub.nbrMap = G.nbrMap;
 
+	defclique::k = k;
+	defclique::mode = mode;
+
 	Ss = heuristic(G, k);
-	// return;
-	// for (int i = 0; i < 26; ++i) Ss.push(i);
 	Graph Core = coreReduction(G, Ss.size() - k);
 #ifdef EDGE_REDUCTION
 	Core = edgeReduction(Core, Ss.size() - k - 1);
 #endif
 	Ordering o = Ordering::DegeneracyOrdering(Core);
 
-	log("Running russian doll search...");
+
+
+	std::string modeString = mode == REDUCTION_SEARCH ? "Reduction" : "Russian Doll";
+	log("Running %s search ...", modeString.c_str());
 
 	auto startTimePoint = std::chrono::steady_clock::now();
 
-	for (int i = o.numOrdered-1; i >= 0; --i) {
+	int branchTimeCount = 0;
+
+	for (int i = mode == REDUCTION_SEARCH ? 0 : o.numOrdered - 1; 
+		i >= 0 && i < o.numOrdered; mode == REDUCTION_SEARCH ? ++i : --i) {
 
 		int u = o.ordered[i];
-		if (o.value[u] < Ss.size()-k) break;
+
+		if (mode == RUSSIANDOLL_SEARCH && o.value[u] < Ss.size()-k) break;
+
+		// S.clear();
+		// C.clear();
+
+		// S.push(u);
+
+		// if (Core.nbr[u].size() < o.numOrdered-i-1) {
+		// 	for (int v : Core.nbr[u])
+		// 		if (o.order[v] > i)
+		// 			C.push(v);
+		// }
+		// else {
+		// 	for (int j = i+1; j < o.numOrdered; ++j) {
+		// 		int v = o.ordered[j];
+		// 		if (Core.connect(u, v))
+		// 			C.push(v);
+		// 	}
+		// }
+
+		// if (upperbound() <= Ss.size()-k)
+		// 	continue;
 
 		if (Ss.size() < k+1) {
-		// if (true) {
 			S.clear();
 			C.clear();
 			S.push(u);
-			nnbS = nnbSub = 0;
-			for (int j = i+1; j < o.numOrdered; ++j)
-				C.push(o.ordered[j]);
-				// add(G, C, degC, o.ordered[j]);
+			for (int j = i+1; j < o.numOrdered; ++j) C.push(o.ordered[j]);
 			Sub.subGraph(Core, S, C);
+			nnbS = 0;
 			nnbSub = ((Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
-			for (int v : Sub.V)
-				degS[v] = degC[v] = 0;
-			for (int v : Sub.nbr[u])
-				degS[v] = 1;
+			for (int v : Sub.V) degS[v] = degC[v] = 0;
+			for (int v : Sub.nbr[u]) degS[v] = 1;
 			for (int v : C) {
 				for (int w : Sub.nbr[v])
 					++degC[w];
@@ -493,15 +517,20 @@ void defclique::russianDollSearch(Graph &G, int k) {
 			for (int v : Sub.V)
 				degC[v] += degC1[v];
 		}
-		// clr = Coloring::graphColoring(Sub, Ss.size()-k+1);
 		clr.graphColoring(Sub, Ss.size()-k+1);
+		auto branchStartTimePoint = std::chrono::steady_clock::now();
 		branch(0);
+		branchTimeCount += std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now() - branchStartTimePoint).count();
 	}
+	
 
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (
-		std::chrono::steady_clock::now() - startTimePoint);
+	auto totalTimeCount = std::chrono::duration_cast<std::chrono::milliseconds> (
+		std::chrono::steady_clock::now() - startTimePoint).count();
 
-	log("Russian doll search done! Time spent: %ld ms", duration.count());
+	log("%s search done! Branch time: %ld ms, total time: %ld ms", 
+		modeString.c_str(), totalTimeCount, branchTimeCount);
+
 	logSet(Ss, "S*");
 
 	Sub.subGraph(G, Ss);
@@ -517,115 +546,6 @@ void defclique::russianDollSearch(Graph &G, int k) {
 	log("Number of missing edges in S*: %d", cnt);
 
 }
-
-// void defclique::reductionSearch(Graph G, int k) {
-
-// 	S.reserve(G.n);
-// 	C.reserve(G.n);
-// 	C1.reserve(G.n);
-// 	D.reserve(G.n);
-
-// 	defclique::k = k;
-// 	Ss = heuristic(G, k);
-// 	G = coreReduction(G, Ss.size() - k);
-// 	Ordering o = Ordering::degreeOrdering(G);
-// 	Coloring c = Coloring::graphColoring(G, Ss.size()-k+1);
-// 	std::vector<bool> vis(c.numColors);
-
-// 	log("Starting branch and reduction search...");
-
-// 	degS.resize(G.n);
-// 	degC.resize(G.n);
-// 	degC1.resize(G.n);
-// 	cnD.resize(G.n);
-
-// 	auto startTimePoint = std::chrono::steady_clock::now();
-	
-// 	for (int i = 0; i < G.V.size() - Ss.size(); ++i) {
-// 		S.clear();
-// 		C.clear();
-// 		C1.clear();
-// 		for (int v : G.V) degS[v] = degC[v] = degC1[v] = 0;
-// 		nnbS = nnbSub = 0;
-
-// 		int u = o.ordered[i];
-
-// 		if (Ss.size() < k + 1) {
-// 			addG(G, S, degS, u);
-// 			for (int v = 0; v < G.n; ++v)
-// 				addG(G, C, degC, v);
-// 		}
-// 		else {
-// 			int deg = 0, cn = 0;
-// 			for (int v : G.nbr[u]) {
-// 				if (o.order[v] > i) {
-// 					++deg;
-// 					if (!vis[c.color[v]]) {
-// 						vis[c.color[v]] = true;
-// 						++cn;
-// 					}
-// 				}
-// 			}
-// 			for (int v : G.nbr[u])
-// 				vis[c.color[v]] = false;
-
-// 			if (deg > Ss.size()-k && cn >= Ss.size()-k) {
-// 				addG(G, S, degS, u);
-// 				for (int v : G.nbr[u]) {
-// 					if (o.order[v] > i)
-// 						addG(G, C1, degC1, v);
-// 				}
-// 				// for (int v : C1) {
-// 				// 	if (degC1[v] < Ss.size() - k) {
-// 				// 		sub(G, C1, degC1, v);
-// 				// 		q.push(v);
-// 				// 	}
-// 				// }
-// 				// while (!q.empty()) {
-// 				// 	int v = q.front(); q.pop();
-// 				// 	for (int w : G.nbr[v]) {
-// 				// 		if (degC1[w] < Ss.size()-k && C1.inside(w)) {
-// 				// 			sub(G, C1, degC1, w);
-// 				// 			q.push(w);
-// 				// 		}
-// 				// 	}
-// 				// }
-// 				while (true) {
-// 					bool flagBreak = true;
-// 					for (int v : C1) {
-// 						if (degC1[v] < Ss.size()-k) {
-// 							flagBreak = false;
-// 							subG(G, C1, degC1, v);
-// 						}
-// 					}
-// 					if (flagBreak) break;
-// 				}
-// 				for (int v : C1) {
-// 					addG(G, C, degC, v);
-// 					for (int w : G.nbr[v]) {
-// 						if (o.order[w] > i && degC1[w] > Ss.size()-k) 
-// 							addG(G, C, degC, w);
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		Sub.subGraph(G, S + C);
-// 		clr = Coloring::graphColoring(Sub, Ss.size()-k+1);
-// 		for (int v : Sub.V) 
-// 			// nnbSub += S.size()-degS[v] + C.size()-degC[v]-1;
-// 			nnbSub += Sub.V.size() - Sub.nbr[v].size() - 1;
-// 		nnbSub >>= 1;
-// 		branch(0);
-
-// 	}
-
-// 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (
-// 		std::chrono::steady_clock::now() - startTimePoint);
-
-// 	log("Branch and reduction search done! Time spent: %ld ms", duration.count());
-// 	logSet(Ss, "S*");
-// }
 
 
 int defclique::upperbound() {
@@ -688,23 +608,28 @@ void defclique::restoreC(int pos) {
 	}
 }
 
+int defclique::update(int v) {
+	int posC = updateC(v);
+	moveCToS(v);
+	return posC;
+}
+
+void defclique::restore(int v, int posC) {
+	moveSToC(v);
+	restoreC(posC);
+}
 
 bool defclique::branch(int dep) {
-	int cntNnbSub = 0, cntNnbS = 0;
-	VertexSet V = S + C;
-	for (int u : V) {
-		for (int v : V) {
-			if (u < v && !Sub.connect(u, v)) {
-				++cntNnbSub;
-				if (S.inside(u) && S.inside(v))
-					++cntNnbS;
-			}
-		}
-	}
-	// if (flagDebug)  {
-	// 	log("\n****** Depth=%d, |S|=%d, |C|=%d, |C1|=%d, nnbS=%d(real=%d), nnbSub=%d(real=%d)\n", dep, S.size(), C.size(), C1.size(), nnbS, cntNnbS, nnbSub, cntNnbSub);
-	// 	logSet(S, "S");
-	// 	logSet(C, "C");	
+	// int cntNnbSub = 0, cntNnbS = 0;
+	// VertexSet V = S + C;
+	// for (int u : V) {
+	// 	for (int v : V) {
+	// 		if (u < v && !Sub.connect(u, v)) {
+	// 			++cntNnbSub;
+	// 			if (S.inside(u) && S.inside(v))
+	// 				++cntNnbS;
+	// 		}
+	// 	}
 	// }
 
 	if (nnbSub <= k) {
@@ -712,7 +637,7 @@ bool defclique::branch(int dep) {
 			Ss.clear();
 			for (int v : S) Ss.push(v);
 			for (int v : C) Ss.push(v);
-			return true;
+			return mode == RUSSIANDOLL_SEARCH;
 		}
 		return false;
 	}
@@ -735,28 +660,26 @@ bool defclique::branch(int dep) {
 
 	bool flagReturn = false;
 
-	// 1 non-neighbor
-	for (int v : C1) {
-		if ((S.size() - degS[v]) + (C.size() - degC[v]) == 2) {
-			int posC = updateC(v);
-			moveCToS(v);
-			if (branch(dep+1)) return true;
-			moveSToC(v);
-			restoreC(posC);
-			flagReturn = true;
-			break;
+	do {
+		// 1 non-neighbor
+		for (int v : C1) {
+			if ((S.size() - degS[v]) + (C.size() - degC[v]) == 2) {
+				int posC = update(v);
+				if (branch(dep+1)) return true;
+				restore(v, posC);
+				flagReturn = true;
+				break;
+			}
 		}
-	}
 
-	if (!flagReturn) {
+		if (flagReturn) break;
+
 		// 2 non-neighbors
 		for (int v : C1) {
 			if ((S.size() - degS[v]) + (C.size() - degC[v]) == 3) {
-				int posC = updateC(v);
-				moveCToS(v);
+				int posC = update(v);
 				if (branch(dep+1)) return true;
-				moveSToC(v);
-				restoreC(posC);
+				restore(v, posC);
 				D.clear();
 				for (int w : C) {
 					if (v != w && S.size()-degS[w] <= 1 && !Sub.connect(v, w))
@@ -765,12 +688,10 @@ bool defclique::branch(int dep) {
 				if (D.size() == 2) {
 					int u = D[D.frontPos()], w = D[D.frontPos() + 1];
 					if (2 * S.size() - degS[u] - degS[w] == 0 && Sub.connect(u, w)) {
-						sub(Sub, C, degC, v);
-						nnbSub -= (S.size()-degS[v] + C.size()-degC[v]);
+						subC(v);
 						for (int x : C)
 							if (!Sub.connect(u, x) || !Sub.connect(w, x)) {
-								sub(Sub, C, degC, x);
-								nnbSub -= (S.size()-degS[x] + C.size()-degC[x]);
+								subC(x);
 							}
 						moveCToS(u);
 						moveCToS(w);
@@ -783,12 +704,10 @@ bool defclique::branch(int dep) {
 				else if (S.size() - degS[v] == 1 && D.size() == 1) {
 					int u = D[D.frontPos()];
 					if (S.size() == degS[u]) {
-						sub(Sub, C, degC, v);
-						nnbSub -= (S.size()-degS[v] + C.size()-degC[v]);
+						subC(v);
 						for (int w : C)
 							if (!Sub.connect(u, w)) {
-								sub(Sub, C, degC, w);
-								nnbSub -= (S.size()-degS[w] + C.size()-degC[w]);
+								subC(w);
 							}
 						moveCToS(u);
 						if (branch(dep+1)) return true;
@@ -800,26 +719,22 @@ bool defclique::branch(int dep) {
 				break;
 			}
 		}
-	}
 
-	if (!flagReturn) {
+		if (flagReturn) break;
+
 		if (C.size() > C1.size()) {
 			int u = C[C.frontPos()];
 			for (int v : C) {
 				if (degS[v] < degS[u])
 					u = v;
 			}
-			int posC = updateC(u);
-			moveCToS(u);
+			int posC = update(u);
 			if (branch(dep+1)) return true;
-			moveSToC(u);
-			restoreC(posC);
+			restore(u, posC);
 
-			sub(Sub, C, degC, u);
-			nnbSub -= S.size()-degS[u] + C.size()-degC[u];
+			subC(u);
 			if (branch(dep+1)) return true;
-			nnbSub += S.size()-degS[u] + C.size()-degC[u];
-			add(Sub, C, degC, u);
+			addC(u);
 		}
 
 
@@ -827,83 +742,58 @@ bool defclique::branch(int dep) {
 			int posC = C.frontPos();
 			int u = C1[C1.frontPos()];
 			for (int v : C1) {
-				if (degS[v] + degC[v] > degS[u] + degC[u]) {
+				if (degC[v] > degC[u]) {
 					u = v;
 				}
 			}
 
-			// VertexSet Cand = C;
-			std::vector<int> Cand(C.begin(), C.end());
-			for (int v : Cand) {
-				if (S.size()-degS[u] + C.size()-degC[u] == 3) break;
+			std::vector<int> P1 = {u}, P2;
+			bool flagNnbSu = S.size()-degS[u] == 1;
+			for (int v : C) {
 				if (v != u && !Sub.connect(u, v)) {
-					C1.pop(v);
-					int posC2 = updateC(v);
-					moveCToS(v);
-					if (branch(dep+1)) return true;
-					moveSToC(v);
-					restoreC(posC2);
-					sub(Sub, C, degC, v);
-					nnbSub -= S.size()-degS[v] + C.size()-degC[v];
+					if (flagNnbSu && S.size() == degS[v])
+						P1.push_back(v);
+					else
+						P2.push_back(v);
 				}
 			}
-			if (S.size()-degS[u] + C.size()-degC[u] == 3) {
-				int posC2 = updateC(u);
-				moveCToS(u);
-				if (branch(dep+1)) return true;
-				moveSToC(u);
-				restoreC(posC2);
-				D.clear();
-				for (int v : C) {
-					if (u != v && S.size()-degS[v] <= 1 && !Sub.connect(u, v))
-						D.push(v);
-				}
-				if (D.size() == 2) {
-					int v = D[D.frontPos()], w = D[D.frontPos() + 1];
-					if (2 * S.size() - degS[v] - degS[w] == 0 && Sub.connect(v, w)) {
-						sub(Sub, C, degC, u);
-						nnbSub -= (S.size()-degS[u] + C.size()-degC[u]);
-						for (int x : C)
-							if (!Sub.connect(v, x) || !Sub.connect(w, x)) {
-								sub(Sub, C, degC, x);
-								nnbSub -= S.size()-degS[x] + C.size()-degC[x];
-							}
-						moveCToS(v);
-						moveCToS(w);
-						if (branch(dep+1)) return true;
-						moveSToC(w);
-						moveSToC(v);
-					}
 
-				}
-				else if (S.size() - degS[u] == 1 && D.size() == 1) {
-					int v = D[D.frontPos()];
-					if (S.size() == degS[v]) {
-						sub(Sub, C, degC, u);
-						nnbSub -= (S.size()-degS[u] + C.size()-degC[u]);
-						for (int w : C)
-							if (!Sub.connect(v, w)) {
-								sub(Sub, C, degC, w);
-								nnbSub -= S.size()-degS[w] + C.size()-degC[w];
-							}
-						moveCToS(v);
+			for (int v : P1) {
+				int posC2 = update(v);
+				if (branch(dep+1)) return true;
+				restore(v, posC2);
+				subC(v);
+			}
+
+			for (int v : P2) {
+				int posC2 = update(v);
+				for (int w : P2)
+					if (C.inside(w) && Sub.connect(v, w)) {
+						int posC3 = update(w);
 						if (branch(dep+1)) return true;
-						moveSToC(v);
+						restore(w, posC3);
+						subC(w);
 					}
-				}
+				restore(v, posC2);
+				subC(v);
 			}
 
 			restoreC(posC);
 		}
-	}
 
-	
 
+	} while (0);
+
+
+	// backtrack all connected
 	for (int i = C.frontPos()-1; i >= initPosC; --i)
 		moveSToC(C[i]);
 
 	return false;
 }
+
+
+
 
 void defclique::add(Graph &G, VertexSet &V, std::vector<int> &degV, int v) {
 	if (V.inside(v)) return;
@@ -919,32 +809,12 @@ void defclique::sub(Graph &G, VertexSet &V, std::vector<int> &degV, int v) {
 		--degV[w];
 }
 
-void defclique::addSub(Graph &G, VertexSet &Sub, VertexSet &V, std::vector<int> &degV, int v) {
-	if (V.inside(v)) return;
-	V.push(v);
-	if (Sub.size() < G.nbr[v].size()) {
-		for (int w : Sub)
-			if (G.connect(v, w))
-				++degV[w];
-	}
-	else {
-		for (int w : G.nbr[v])
-			if (Sub.inside(w))
-				++degV[w];
-	}
+void defclique::addC(int v) {
+	nnbSub += S.size()-degS[v] + C.size()-degC[v];
+	add(Sub, C, degC, v);
 }
 
-void defclique::subSub(Graph &G, VertexSet &Sub, VertexSet &V, std::vector<int> &degV, int v) {
-	if (!V.inside(v)) return;
-	V.pop(v);
-	if (Sub.size() < G.nbr[v].size()) {
-		for (int w : Sub)
-			if (G.connect(v, w))
-				--degV[w];
-	}
-	else {
-		for (int w : G.nbr[v])
-			if (Sub.inside(w))
-				--degV[w];
-	}
+void defclique::subC(int v) {
+	sub(Sub, C, degC, v);
+	nnbSub -= S.size()-degS[v] + C.size()-degC[v];
 }
