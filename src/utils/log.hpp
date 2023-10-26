@@ -25,8 +25,8 @@ namespace logging {
 };
 
 #define log(fmt, args...) do {														\
-	fprintf(stderr, "[\033[34m%s\033[0m:\033[32m%d\033[0m in \033[35m%s\033[0m] ",	\
-		strrchr(__FILE__, '/')+1, __LINE__, __FUNCTION__);							\
+	/* fprintf(stderr, "[\033[34m%s\033[0m:\033[32m%d\033[0m in \033[35m%s\033[0m] ",\ 
+		strrchr(__FILE__, '/')+1, __LINE__, __FUNCTION__); */ 						\
 	fprintf(stderr, fmt, ##args);													\
 	fprintf(stderr, "\n");															\
 } while (0);																	    \

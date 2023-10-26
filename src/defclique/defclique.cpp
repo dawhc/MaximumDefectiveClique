@@ -529,7 +529,7 @@ void defclique::run(Graph &G, int k, int mode) {
 		std::chrono::steady_clock::now() - startTimePoint).count();
 
 	log("%s search done! Branch time: %ld ms, total time: %ld ms", 
-		modeString.c_str(), totalTimeCount, branchTimeCount);
+		modeString.c_str(), branchTimeCount, totalTimeCount);
 
 	logSet(Ss, "S*");
 

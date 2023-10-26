@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 		std::chrono::steady_clock::now() - startTimePoint);
 
 	log("Reading graph done! Time spent: %ld ms", duration.count());
+	log("Graph info: n=%d, m=%d, maxdeg=%d", G.n, G.m, G.maxDeg);
 
 	startTimePoint = std::chrono::steady_clock::now();
 
