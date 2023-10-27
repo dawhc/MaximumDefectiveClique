@@ -10,10 +10,13 @@
 #include <sstream>
 
 // #define EDGE_REDUCTION
+#define DEBUG_RESULT
+// #define DEBUG_BRANCH
 
 
 namespace defclique {
-	int k, nnbS, nnbSub;
+	int k, nnbS;
+    // long long nnbSub;
 	Graph Sub;
 	Coloring clr;
 	VertexSet S, C, Ss, C1, D;
@@ -175,7 +178,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 	S.clear();
 	C.clear();
 	C1.clear();
-	nnbS = nnbSub = 0;
+	nnbS = 0; //nnbSub = 0;
 	S.push(u);
 
 	int i = o.order[u];
@@ -279,7 +282,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 			++degC[w];
 	}
 
-	nnbSub = ((Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
+	// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
 
 }
 
@@ -343,7 +346,8 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 		int j = oSub.numOrdered;	
 
-		while (nnbSub > k) {
+		// while (nnbSub > k) {
+		while (C.size() > 0 || C1.size() > 0) {
 
 			// Select a vertex from C1 cup C2 with maximum core number
 			int u = oSub.ordered[--j];
@@ -361,7 +365,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			for (int v : C1) {
 				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
 					sub(Sub, C1, degC1, v);
-					nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
+					// nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
 					q[tail++] = v;
 				}
 			}
@@ -372,7 +376,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 					for (int w : Sub.nbr[v]) {
 						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && C1.inside(w)) {
 							sub(Sub, C1, degC1, w);
-							nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
+							// nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
 							q[tail++] = w;
 						}
 					}
@@ -381,7 +385,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 					for (int w : C1) {
 						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && Sub.connect(v, w)) {
 							sub(Sub, C1, degC1, w);
-							nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
+							// nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
 							q[tail++] = w;
 						}
 					}
@@ -391,7 +395,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			for (int v : C) {
 				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
 					sub(Sub, C, degC, v);
-					nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
+					// nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
 				}
 			}
 
@@ -412,11 +416,15 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 
 		// Update Ss
-		if (Ss.size() < S.size() + C.size() + C1.size()) {
+		// if (Ss.size() < S.size() + C.size() + C1.size()) {
+		// 	Ss.clear();
+		// 	for (int v : S) Ss.push(v);
+		// 	for (int v : C) Ss.push(v);
+		// 	for (int v : C1) Ss.push(v);
+		// }
+		if (Ss.size() < S.size()) {
 			Ss.clear();
 			for (int v : S) Ss.push(v);
-			for (int v : C) Ss.push(v);
-			for (int v : C1) Ss.push(v);
 		}
 	}
 
@@ -472,6 +480,10 @@ void defclique::run(Graph &G, int k, int mode) {
 
 		int u = o.ordered[i];
 
+#ifdef DEBUG_BRANCH
+		log("********** New branch: u=%d **********\n", u);
+#endif
+
 		if (mode == RUSSIANDOLL_SEARCH && o.value[u] < Ss.size()-k) break;
 
 		// S.clear();
@@ -502,7 +514,7 @@ void defclique::run(Graph &G, int k, int mode) {
 			for (int j = i+1; j < o.numOrdered; ++j) C.push(o.ordered[j]);
 			Sub.subGraph(Core, S, C);
 			nnbS = 0;
-			nnbSub = ((Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
+			// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
 			for (int v : Sub.V) degS[v] = degC[v] = 0;
 			for (int v : Sub.nbr[u]) degS[v] = 1;
 			for (int v : C) {
@@ -530,8 +542,9 @@ void defclique::run(Graph &G, int k, int mode) {
 
 	log("%s search done! Branch time: %ld ms, total time: %ld ms", 
 		modeString.c_str(), branchTimeCount, totalTimeCount);
-
 	logSet(Ss, "S*");
+
+#ifdef DEBUG_RESULT
 
 	Sub.subGraph(G, Ss);
 
@@ -544,6 +557,7 @@ void defclique::run(Graph &G, int k, int mode) {
 			}
 	}
 	log("Number of missing edges in S*: %d", cnt);
+#endif
 
 }
 
@@ -594,7 +608,7 @@ int defclique::updateC(int v) {
 	for (int u : C) {
 		if (u != v && nnbS + 2 * sizeS-degS[u]-degS[v] + (int)!Sub.connect(u, v) > k) {
 			sub(Sub, C, degC, u);
-			nnbSub -= S.size()-degS[u] + C.size()-degC[u];
+			// nnbSub -= S.size()-degS[u] + C.size()-degC[u];
 		}
 	}
 	return posC;
@@ -603,7 +617,7 @@ int defclique::updateC(int v) {
 void defclique::restoreC(int pos) {
 	for (int i = C.frontPos()-1; i >= pos; --i) {
 		int u = C[i];
-		nnbSub += S.size()-degS[u] + C.size()-degC[u];
+		// nnbSub += S.size()-degS[u] + C.size()-degC[u];
 		add(Sub, C, degC, u);
 	}
 }
@@ -620,27 +634,45 @@ void defclique::restore(int v, int posC) {
 }
 
 bool defclique::branch(int dep) {
-	// int cntNnbSub = 0, cntNnbS = 0;
-	// VertexSet V = S + C;
-	// for (int u : V) {
-	// 	for (int v : V) {
-	// 		if (u < v && !Sub.connect(u, v)) {
-	// 			++cntNnbSub;
-	// 			if (S.inside(u) && S.inside(v))
-	// 				++cntNnbS;
-	// 		}
-	// 	}
-	// }
 
-	if (nnbSub <= k) {
-		if (S.size() + C.size() > Ss.size()) {
+#ifdef DEBUG_BRANCH
+
+	int cntNnbSub = 0, cntNnbS = 0;
+	VertexSet V = S + C;
+	for (int u : V) {
+		for (int v : V) {
+			if (u < v && !Sub.connect(u, v)) {
+				++cntNnbSub;
+				if (S.inside(u) && S.inside(v))
+					++cntNnbS;
+			}
+		}
+	}
+
+	log("\n*** dep=%d, |S|=%d, |C|=%d, nnbS=%d(real=%d)", 
+		dep, S.size(), C.size(), nnbS, cntNnbS);
+	logSet(S, "S");
+	logSet(C, "C");
+
+#endif
+
+	if (C.size() == 0) {
+		if (S.size() > Ss.size()) {
 			Ss.clear();
 			for (int v : S) Ss.push(v);
-			for (int v : C) Ss.push(v);
-			return mode == RUSSIANDOLL_SEARCH;
+				return mode == RUSSIANDOLL_SEARCH;
 		}
 		return false;
 	}
+	// if (nnbSub <= k) {
+	// 	if (S.size() + C.size() > Ss.size()) {
+	// 		Ss.clear();
+	// 		for (int v : S) Ss.push(v);
+	// 		for (int v : C) Ss.push(v);
+	// 		return mode == RUSSIANDOLL_SEARCH;
+	// 	}
+	// 	return false;
+	// }
 	if (upperbound() <= Ss.size()) 
 		return false;
 	C1.clear();
@@ -810,11 +842,11 @@ void defclique::sub(Graph &G, VertexSet &V, std::vector<int> &degV, int v) {
 }
 
 void defclique::addC(int v) {
-	nnbSub += S.size()-degS[v] + C.size()-degC[v];
+	// nnbSub += S.size()-degS[v] + C.size()-degC[v];
 	add(Sub, C, degC, v);
 }
 
 void defclique::subC(int v) {
 	sub(Sub, C, degC, v);
-	nnbSub -= S.size()-degS[v] + C.size()-degC[v];
+	// nnbSub -= S.size()-degS[v] + C.size()-degC[v];
 }
