@@ -9,12 +9,14 @@
 
 #define RUSSIANDOLL_SEARCH 0
 #define REDUCTION_SEARCH 1
+#define ONE_HOP 0
+#define TWO_HOP 1
 
 namespace defclique {
 	void logSet(VertexSet &V, const std::string &name);
 	Graph coreReduction(Graph &G, int k);
 	Graph edgeReduction(Graph &G, int k);
-	void preprocessing(Graph &G, Ordering &o, int u);
+	void preprocessing(Graph &G, Ordering &o, int u, int mode=TWO_HOP);
 	VertexSet heuristic(Graph &G, int k);
 	int upperbound();
 	void run(Graph &G, int k, int mode=REDUCTION_SEARCH);

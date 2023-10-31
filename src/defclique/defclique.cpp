@@ -9,9 +9,10 @@
 #include <cstdio>
 #include <sstream>
 
-// #define EDGE_REDUCTION
+//#define EDGE_REDUCTION
 #define DEBUG_RESULT
 // #define DEBUG_BRANCH
+#define HEURISTIC_V2
 
 
 namespace defclique {
@@ -174,7 +175,7 @@ Graph defclique::edgeReduction(Graph &G, int k) {
 
 }
 
-void defclique::preprocessing(Graph &G, Ordering &o, int u) {
+void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 	S.clear();
 	C.clear();
 	C1.clear();
@@ -183,6 +184,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 
 	int i = o.order[u];
 
+	// Construct C1
 	if (G.nbr[u].size() < o.numOrdered-i-1) {
 		for (int v : G.nbr[u])
 			if (o.order[v] > i)
@@ -214,7 +216,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 		int v = q[head++];
 		if (Sub.nbr[v].size() < C1.size()) {
 			for (int w : Sub.nbr[v]) {
-				if (C1.inside(w) && degC1[w] < Ss.size()-k) {
+				if (C1.inside(w) && degC1[w] < Ss.size()-k-1) {
 					q[tail++] = w;
 					sub(Sub, C1, degC1, w);
 				}
@@ -222,50 +224,52 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 		}
 		else {
 			for (int w : C1)
-				if (Sub.connect(v, w) && degC1[w] < Ss.size()-k) {
+				if (Sub.connect(v, w) && degC1[w] < Ss.size()-k-1) {
 					q[tail++] = w;
 					sub(Sub, C1, degC1, w);
 				}
 		}
 	}
 
-	// Construct C2
-	for (int v : C1) {
-		if (G.nbr[v].size() < o.numOrdered-i-1) {
-			for (int w : G.nbr[v]) {
-				if (o.order[w] > i && !C1.inside(w)) {
-					degC1[w] = 0;
-					C.push(w);
+	if (mode == TWO_HOP) {
+		// Construct C2
+		for (int v : C1) {
+			if (G.nbr[v].size() < o.numOrdered-i-1) {
+				for (int w : G.nbr[v]) {
+					if (o.order[w] > i && !C1.inside(w)) {
+						degC1[w] = 0;
+						C.push(w);
+					}
 				}
 			}
-		}
-		else {
-			for (int j = i+1; j < o.numOrdered; ++j) {
-				int w = o.ordered[j];
-				if (G.connect(v, w) && !C1.inside(w)) {
-					degC1[w] = 0;
-					C.push(w);
+			else {
+				for (int j = i+1; j < o.numOrdered; ++j) {
+					int w = o.ordered[j];
+					if (G.connect(v, w) && !C1.inside(w)) {
+						degC1[w] = 0;
+						C.push(w);
+					}
 				}
 			}
-		}
-	}	
+		}	
 
-	for (int v : C1) {
-		if (C.size() < G.nbr[v].size()) {
-			for (int w : C)
-				if (G.connect(v, w))
-					++degC1[w];
+		for (int v : C1) {
+			if (C.size() < G.nbr[v].size()) {
+				for (int w : C)
+					if (G.connect(v, w))
+						++degC1[w];
+			}
+			else {
+				for (int w : G.nbr[v])
+					if (C.inside(w))
+						++degC1[w];
+			}
 		}
-		else {
-			for (int w : G.nbr[v])
-				if (C.inside(w))
-					++degC1[w];
-		}
+
+		for (int v : C)
+			if (degC1[v] < Ss.size()-k)
+				C.pop(v);
 	}
-
-	for (int v : C)
-		if (degC1[v] < Ss.size()-k)
-			C.pop(v);
 
 	Sub.subGraph(G, S, C1, C);
 
@@ -282,7 +286,11 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u) {
 			++degC[w];
 	}
 
-	// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
+	for (int v : C1)
+		C.push(v);
+
+	for (int v : Sub.V)
+		degC[v] += degC1[v];
 
 }
 
@@ -294,45 +302,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 	Ordering o, oSub;
 
-#ifndef HEURISTIC_V2
-	S.clear();
-	C.clear();
-	std::vector<int>(G.n).swap(degS);
-
-
 	o.degeneracyOrdering(G);
-	int u = o.ordered[o.numOrdered - 1];
-	add(G, S, degS, u);
-
-	// Expanding Ss with vertices in N2(v) in a degree ordering
-	for (int v : G.nbr[u]) {
-		C.push(v);
-		// for (int w : G.nbr[v]) 
-		// 	if (!C.inside(w) && w != u)
-		// 		C1.push(w);
-	}
-
-	Sub.subGraph(G, S, C);
-	o.degeneracyOrdering(Sub);
-
-	for (int i = o.numOrdered - 1; i >= 0; --i) {
-		int v = o.ordered[i];
-		if (!C.inside(v)) continue;
-		nnbS += S.size() - degS[v];
-		if (nnbS > k) break;
-		add(Sub, S, degS, v);
-	}
-
-	Ss = S;
-
-	logSet(Ss, "Initial S*");
-
-	Graph Core = coreReduction(G, Ss.size() - k);
-#else
-	Graph Core = G;
-#endif
-
-	o.degeneracyOrdering(Core);
 
 	for (int i = o.numOrdered-1; i >= 0; --i) {
 		// fprintf(stderr, "%d/%d\r", o.numOrdered-i, o.numOrdered);
@@ -340,74 +310,122 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 		int u = o.ordered[i];
 		if (o.value[u] < Ss.size()-k) break;
 
-		preprocessing(Core, o, u);
+		preprocessing(G, o, u, ONE_HOP);
 
 		oSub.degeneracyOrdering(Sub);
 
 		int j = oSub.numOrdered;	
 
-		// while (nnbSub > k) {
-		while (C.size() > 0 || C1.size() > 0) {
+		while (C.size() > 0) {
 
-			// Select a vertex from C1 cup C2 with maximum core number
+			// Select a vertex from C with maximum degeneracy
 			int u = oSub.ordered[--j];
-			for (; !C1.inside(u) && !C.inside(u); u = oSub.ordered[--j]);
+			for (; !C.inside(u); u = oSub.ordered[--j]);
+			// Select a vertex from C with maximum degree
+			// int u = C[C.frontPos()];
+			// for (int v : C) {
+			// 	if (degS[v] + degC[v] > degS[u] + degC[u]) {
+			// 		u = v;
+			// 	}
+			// }
 
 
-			// Add u from C1|C2 to S
+			// Add u from C to S
 			nnbS += S.size() - degS[u];
 			add(Sub, S, degS, u);
+			sub(Sub, C, degC, u);
 
-			C1.inside(u) ? sub(Sub, C1, degC1, u) : sub(Sub, C, degC, u);
-
-			// Prune C1 & C2 
+			// Prune C 
 			int head = 0, tail = 0;
-			for (int v : C1) {
-				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
-					sub(Sub, C1, degC1, v);
-					// nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
-					q[tail++] = v;
-				}
+			for (int v : C) if (nnbS + S.size()-degS[v] > k || degS[v]+degC[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+				sub(Sub, C, degC, v);
+				q[tail++] = v;
 			}
 
 			while (head < tail) {
 				int v = q[head++];
-				if (Sub.nbr[v].size() < C1.size()) {
-					for (int w : Sub.nbr[v]) {
-						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && C1.inside(w)) {
-							sub(Sub, C1, degC1, w);
-							// nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
-							q[tail++] = w;
-						}
+				if (Sub.nbr[v].size() < C.size()) {
+					for (int w : Sub.nbr[v]) if (degS[w]+degC[w] < Ss.size()-k + S.size()-degS[w] + nnbS && C.inside(w)) {
+						sub(Sub, C, degC, w);
+						q[tail++] = w;
 					}
 				}
 				else {
-					for (int w : C1) {
-						if (degS[w]+degC1[w] < Ss.size()-k+S.size()-degS[w] && Sub.connect(v, w)) {
-							sub(Sub, C1, degC1, w);
-							// nnbSub -= (S.size()-degS[w] + C1.size()-degC1[w] + C.size()-degC[w]);
-							q[tail++] = w;
-						}
+					for (int w : C) if (degS[w]+degC[w] < Ss.size()-k + S.size()-degS[w] + nnbS && Sub.connect(v, w)) {
+						sub(Sub, C, degC, w);
+						q[tail++] = w;
 					}
-				}
-			}
-
-			for (int v : C) {
-				if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
-					sub(Sub, C, degC, v);
-					// nnbSub -= (S.size()-degS[v] + C1.size()-degC1[v] + C.size()-degC[v]);
 				}
 			}
 
 			bool flagBreak = false;
 
-			for (int v : S) {
-				if (degS[v]+degC1[v] < Ss.size()-k+S.size()-degS[v]) {
-					C1.clear();
-					C.clear();
-					flagBreak = true;
-					break;
+			for (int v : S) if (degS[v]+degC[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+				C.clear();
+				flagBreak = true;
+				break;
+			}
+
+			if (flagBreak) break;
+			
+		}
+
+		if (Ss.size() < S.size()) {
+			Ss.clear();
+			for (int v : S) Ss.push(v);
+		}
+
+		// TODO: another while
+		S.clear(); 
+		S.push(u);
+		for (int v : Sub.V) 
+			degS[v] = (int)Sub.connect(u, v);
+
+		while (C1.size() > 0) {
+
+			// Select a vertex from C with maximum degree
+			int u = C1[C1.frontPos()];
+			for (int v : C1) {
+				if (degS[v] + degC1[v] > degS[u] + degC1[u]) {
+					u = v;
 				}
+			}
+
+
+			// Add u from C to S
+			nnbS += S.size() - degS[u];
+			add(Sub, S, degS, u);
+			sub(Sub, C1, degC1, u);
+
+			// Prune C 
+			int head = 0, tail = 0;
+			for (int v : C1) if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+				sub(Sub, C1, degC1, v);
+				q[tail++] = v;
+			}
+
+			while (head < tail) {
+				int v = q[head++];
+				if (Sub.nbr[v].size() < C1.size()) {
+					for (int w : Sub.nbr[v]) if (degS[w]+degC1[w] < Ss.size()-k + S.size()-degS[w] + nnbS && C1.inside(w)) {
+						sub(Sub, C1, degC1, w);
+						q[tail++] = w;
+					}
+				}
+				else {
+					for (int w : C1) if (degS[w]+degC1[w] < Ss.size()-k + S.size()-degS[w] + nnbS && Sub.connect(v, w)) {
+						sub(Sub, C1, degC1, w);
+						q[tail++] = w;
+					}
+				}
+			}
+
+			bool flagBreak = false;
+
+			for (int v : S) if (degS[v]+degC1[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+				C1.clear();
+				flagBreak = true;
+				break;
 			}
 
 			if (flagBreak) break;
@@ -415,13 +433,6 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 		}
 
 
-		// Update Ss
-		// if (Ss.size() < S.size() + C.size() + C1.size()) {
-		// 	Ss.clear();
-		// 	for (int v : S) Ss.push(v);
-		// 	for (int v : C) Ss.push(v);
-		// 	for (int v : C1) Ss.push(v);
-		// }
 		if (Ss.size() < S.size()) {
 			Ss.clear();
 			for (int v : S) Ss.push(v);
@@ -523,11 +534,7 @@ void defclique::run(Graph &G, int k, int mode) {
 			}
 		}
 		else {
-			preprocessing(Core, o, u);
-			for (int v : C1)
-				C.push(v);
-			for (int v : Sub.V)
-				degC[v] += degC1[v];
+			preprocessing(Core, o, u, TWO_HOP);
 		}
 		clr.graphColoring(Sub, Ss.size()-k+1);
 		auto branchStartTimePoint = std::chrono::steady_clock::now();
@@ -658,6 +665,9 @@ bool defclique::branch(int dep) {
 
 	if (C.size() == 0) {
 		if (S.size() > Ss.size()) {
+#ifdef DEBUG_BRANCH
+			log("*** New S*: size=%d", S.size());
+#endif
 			Ss.clear();
 			for (int v : S) Ss.push(v);
 				return mode == RUSSIANDOLL_SEARCH;
@@ -690,9 +700,9 @@ bool defclique::branch(int dep) {
 		}
 	}
 
-	bool flagReturn = false;
-
-	do {
+	if (C.size() == 0) branch(dep+1);
+	else do {
+		bool flagReturn = false;
 		// 1 non-neighbor
 		for (int v : C1) {
 			if ((S.size() - degS[v]) + (C.size() - degC[v]) == 2) {

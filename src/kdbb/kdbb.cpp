@@ -1,32 +1,17 @@
 #include "kdbb.h"
-#include <vector>
+#include "pmc/pmc.h"
+#include <chrono>
 #include <queue>
 #include <algorithm>
 
 namespace kdbb {
 	VertexSet S, C;
 	std::vector<int> degS, degC;
-	int k, nnbS, nnbSub;
-	std::vector<std::vector<int>> bin;
+	int k, nnbS;
+	Graph G;
+	std::vector<int> bin;
 }
 
-int kdbb::upperbound() {
-	for (int i = 0; i <= k; ++i) bin[i].clear();
-	for (int v : C) bin[S.size() - degS[v]].push_back(v);
-	int nnbCnt = nnbS, vCnt = 0;
-	for (int i = 0; i <= k; ++i) {
-		for (int v : bin[i]) {
-			if (nnbCnt + i > k) {
-				return S.size() + vCnt;
-			}
-			else {
-				nnbCnt += i;
-				++vCnt;
-			}
-		}
-	}
-	return S.size() + vCnt;
-}
 
 Graph kdbb::preprocessing(Graph &G, int k, int lb) {
 	Graph C = coreReduction(G, lb-k);
@@ -70,11 +55,10 @@ Graph kdbb::coreReduction(Graph& G, int k) {
 		}
 	}
 
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (
-		std::chrono::steady_clock::now() - startTimePoint);
-
 	return C;
 }
+
+
 
 Graph kdbb::edgeReduction(Graph &G, int k) {
 	std::vector<int> cn(G.m), q(G.m);
@@ -88,7 +72,7 @@ Graph kdbb::edgeReduction(Graph &G, int k) {
 
 	auto countCommonNeighbor = [&](int u, int v) {
 		int cnt = 0;
-		if (G.nbr[u] > G.nbr[v]) std::swap(u, v);
+		if (G.nbr[u].size() > G.nbr[v].size()) std::swap(u, v);
 		for (int w : G.nbr[u])
 			if (G.connect(v, w))
 				++cnt;
@@ -152,13 +136,202 @@ Graph kdbb::edgeReduction(Graph &G, int k) {
 }
 
 
-int kdbb::KDBB(Graph &G, int k) {
-	// TODO: FastLB
-	int lb = FastLB();
-	G = preprocessing(G, k, lb);
-
+int kdbb::fastLB(std::string filename) {
+    pmc::pmc_graph G(filename);
+    input in;
+    in.graph = filename;
+    G.compute_cores();
+    in.ub = G.get_max_core() + 1;
+    std::vector<int> C;
+    pmc::pmc_heu maxclique(G, in);
+    in.lb = maxclique.search(G, C);
+    if (in.lb == in.ub) return in.lb;
+    if (G.num_vertices() < in.adj_limit) {
+        G.create_adj();
+        pmc::pmcx_maxclique finder(G,in);
+        finder.search_dense(G,C);
+    }
+    else {
+        pmc::pmcx_maxclique finder(G,in);
+        finder.search(G,C);
+    }
+    return C.size();
 }
 
-void kdbb::branch(int v) {
+
+int kdbb::KDBB(std::string filename, int k) {
+	// TODO: FastLB
+	Graph inputG(filename);
+	int lb = fastLB(filename);
+	G = preprocessing(inputG, k, lb);
+	S.reserve(G.n);
+	C.reserve(G.n);
+	bin.resize(G.maxDeg+1);
+	for (int v : G.V) C.push(v);
+	nnbS = 0;
+	return branch(-1, lb);
+}
+
+int kdbb::branch(int u, int lb) {
+
+	auto numNbrS = [&](int v) {
+		int cnt = 0;
+		if (S.size() < G.nbr[u].size()) {
+			for (int w : S)
+				if (G.connect(w, v))
+					++cnt;
+		}
+		else {
+			for (int w : G.nbr[v])
+				if (S.inside(w) && G.connect(v, w))
+					++cnt;
+		}
+		return cnt;
+	};
+
+	auto numNbrC = [&](int v) {
+		int cnt = 0;
+		if (C.size() < G.nbr[u].size()) {
+			for (int w : C)
+				if (G.connect(w, v))
+					++cnt;
+		}
+		else {
+			for (int w : G.nbr[v])
+				if (C.inside(w) && G.connect(v, w))
+					++cnt;
+		}
+		return cnt;
+	};
+
+	auto numCommNbrC = [&](int u, int v) {
+		int cnt = 0;
+		if (G.nbr[u].size() > G.nbr[v].size()) std::swap(u, v);
+		if (G.nbr[u].size() < C.size()) {
+			for (int w : G.nbr[u])
+				if (C.inside(w) && G.connect(u, w) && G.connect(v, w))
+					++cnt;
+		}
+		else {
+			for (int w : C)
+				if (G.connect(u, w) && G.connect(v, w))
+					++cnt;
+		}
+		return cnt;
+	};
+
+	auto candibound = [&]() {
+		int cb = S.size(), maxNonDeg = 0, nnbCnt = nnbS;
+		for (int v : C) {
+			maxNonDeg = std::max(maxNonDeg, S.size()-degS[v]+1);
+			++bin[S.size()-degS[v]];
+		}
+
+		for (int i = 0; i < maxNonDeg; ++i) {
+			if (bin[i]*i + nnbCnt <= k) {
+				cb += bin[i];
+				nnbCnt += bin[i] * i;
+			}
+			else {
+				cb += (k-nnbCnt) / i;
+				break;
+			}
+		}
+
+		for (int i = 0; i < maxNonDeg; ++i)
+			bin[i] = 0;
+		return cb;
+	};
+
+
+	if (nnbS > k) return lb;
+
+	int posC = C.frontPos();
+
+	std::vector<std::pair<int, int>> removedEdges;
+
+	for (int v : C) {
+		degS[v] = numNbrS(v);
+		degC[v] = numNbrC(v);
+	}
+
+	// prune C
+	if (u != -1) {
+		if (S.inside(u)) {
+			for (int v : C) {
+				int comm = numCommNbrC(u, v);
+				if (S.size()+1 + comm + std::min(k-nnbS-(S.size()-degS[v]), C.size()-comm-1) <= lb)
+					C.pop(v);
+			}
+		}
+
+		for (int w : C) {
+			// bool flag = false;
+			// if (G.connect(u, w)) flag = true;
+			// else {
+			// 	for (int u : G.nbr[w])
+			// 		if (!S.inside(u) && !C.inside(u)) {
+			// 			flag = true;
+			// 			break;
+			// 		}
+			// }
+			// if (flag) {
+			if (true) {
+				if (S.size()+1 + degC[w] + std::min(k-nnbS-(S.size()-degS[w]), C.size()-degC[w]-1) <= lb) {
+					C.pop(w);
+					continue;
+				}
+
+				if (G.nbr[w].size() < C.size()) {	
+					for (int u : G.nbr[w]) if (C.inside(u) && G.connect(u, w)) {
+						int comm = numCommNbrC(u, w);
+						if (S.size()+2 + comm + std::min(k-nnbS-(2*S.size()-degS[u]-degS[w]), C.size()-comm-2) <= lb) {
+							removedEdges.push_back(make_pair(u, w));
+							G.nbrMap[u].remove(w);
+							G.nbrMap[w].remove(u);
+						} 
+					}
+				}
+				else {
+					for (int u : C) if (G.connect(u, w)) {
+						int comm = numCommNbrC(u, w);
+						if (S.size()+2 + comm + std::min(k-nnbS-(2*S.size()-degS[u]-degS[w]), C.size()-comm-2) <= lb) {
+							removedEdges.push_back(make_pair(u, w));
+							G.nbrMap[u].remove(w);
+							G.nbrMap[w].remove(u);
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+	if (C.size() == 0) return S.size();
+
+
+
+	if (candibound() <= lb) return lb;
+
+	int v = C[C.frontPos()];
+	int degSv = degS[v];
 	
+	nnbS += S.size() - degSv;
+	C.pop(v);
+	S.push(v);
+	lb = std::max(lb, branch(v, lb));
+	S.pop(v);
+	nnbS -= S.size() - degSv;
+	lb = std::max(lb, branch(v, lb));
+	C.push(v);
+
+	C.restore(posC);
+
+	for (auto e : removedEdges) {
+		G.nbrMap[e.first].insert(e.second);
+		G.nbrMap[e.second].insert(e.first);
+	}
+
+	return lb;
 }

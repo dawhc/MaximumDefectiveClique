@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 
 	if (argc >= 4 && !strcmp("RussianDoll", argv[3]))
 		mode = RUSSIANDOLL_SEARCH;
-	else if (argc >= 4 && !strcmp("Reduction", argv[3]) || argc == 3)
+	else if ((argc >= 4 && !strcmp("Reduction", argv[3])) || argc == 3)
 		mode = REDUCTION_SEARCH;
 	else {
 		usage();

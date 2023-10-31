@@ -21,8 +21,8 @@
 #define PMCX_MAXCLIQUE_H_
 
 #include <cstddef>
-#include <sys/time.h>
-#include <unistd.h>
+// #include <sys/time.h>
+// #include <unistd.h>
 #include <iostream>
 #include "pmc_headers.h"
 #include "pmc_utils.h"
