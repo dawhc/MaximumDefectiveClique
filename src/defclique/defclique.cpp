@@ -197,6 +197,12 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 				C1.push(v);
 		}
 	}
+	if (Ss.size() >= C1.size()+1+k) {
+		S.clear();
+		C.clear();
+		C1.clear();
+		return;
+	}
 
 	Sub.subGraph(G, C1);
 
@@ -321,13 +327,6 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			// Select a vertex from C with maximum degeneracy
 			int u = oSub.ordered[--j];
 			for (; !C.inside(u); u = oSub.ordered[--j]);
-			// Select a vertex from C with maximum degree
-			// int u = C[C.frontPos()];
-			// for (int v : C) {
-			// 	if (degS[v] + degC[v] > degS[u] + degC[u]) {
-			// 		u = v;
-			// 	}
-			// }
 
 
 			// Add u from C to S
@@ -337,7 +336,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 			// Prune C 
 			int head = 0, tail = 0;
-			for (int v : C) if (nnbS + S.size()-degS[v] > k || degS[v]+degC[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+			for (int v : C) if (nnbS + S.size()-degS[v] > k || degC[v]+degS[v] < Ss.size()-k + nnbS) {
 				sub(Sub, C, degC, v);
 				q[tail++] = v;
 			}
@@ -345,13 +344,13 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			while (head < tail) {
 				int v = q[head++];
 				if (Sub.nbr[v].size() < C.size()) {
-					for (int w : Sub.nbr[v]) if (degS[w]+degC[w] < Ss.size()-k + S.size()-degS[w] + nnbS && C.inside(w)) {
+					for (int w : Sub.nbr[v]) if (degC[w]+degS[w] < Ss.size()-k + nnbS && C.inside(w)) {
 						sub(Sub, C, degC, w);
 						q[tail++] = w;
 					}
 				}
 				else {
-					for (int w : C) if (degS[w]+degC[w] < Ss.size()-k + S.size()-degS[w] + nnbS && Sub.connect(v, w)) {
+					for (int w : C) if (degC[w]+degS[w] < Ss.size()-k + nnbS && Sub.connect(v, w)) {
 						sub(Sub, C, degC, w);
 						q[tail++] = w;
 					}
@@ -360,7 +359,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 			bool flagBreak = false;
 
-			for (int v : S) if (degS[v]+degC[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+			for (int v : S) if (degC[v] <= Ss.size()-k - S.size() + nnbS) {
 				C.clear();
 				flagBreak = true;
 				break;
@@ -399,7 +398,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 			// Prune C 
 			int head = 0, tail = 0;
-			for (int v : C1) if (nnbS + S.size()-degS[v] > k || degS[v]+degC1[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+			for (int v : C1) if (nnbS + S.size()-degS[v] > k || degC1[v]+degS[v] < Ss.size()-k + nnbS) {
 				sub(Sub, C1, degC1, v);
 				q[tail++] = v;
 			}
@@ -407,13 +406,13 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			while (head < tail) {
 				int v = q[head++];
 				if (Sub.nbr[v].size() < C1.size()) {
-					for (int w : Sub.nbr[v]) if (degS[w]+degC1[w] < Ss.size()-k + S.size()-degS[w] + nnbS && C1.inside(w)) {
+					for (int w : Sub.nbr[v]) if (degC1[w]+degS[w] < Ss.size()-k + nnbS && C1.inside(w)) {
 						sub(Sub, C1, degC1, w);
 						q[tail++] = w;
 					}
 				}
 				else {
-					for (int w : C1) if (degS[w]+degC1[w] < Ss.size()-k + S.size()-degS[w] + nnbS && Sub.connect(v, w)) {
+					for (int w : C1) if (degC1[w]+degS[w] < Ss.size()-k + nnbS && Sub.connect(v, w)) {
 						sub(Sub, C1, degC1, w);
 						q[tail++] = w;
 					}
@@ -422,7 +421,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 			bool flagBreak = false;
 
-			for (int v : S) if (degS[v]+degC1[v] < Ss.size()-k + S.size()-degS[v] + nnbS) {
+			for (int v : S) if (degC1[v] <= Ss.size()-k - S.size() + nnbS) {
 				C1.clear();
 				flagBreak = true;
 				break;
@@ -471,12 +470,20 @@ void defclique::run(Graph &G, int k, int mode) {
 	defclique::mode = mode;
 
 	Ss = heuristic(G, k);
+
+	if (Ss.size() < k+1) {
+		for (int v : G.V) {
+			Ss.push(v);
+			if (Ss.size() == k+1) break;
+		}
+	}
+	
+
 	Graph Core = coreReduction(G, Ss.size() - k);
 #ifdef EDGE_REDUCTION
 	Core = edgeReduction(Core, Ss.size() - k - 1);
 #endif
 	Ordering o = Ordering::DegeneracyOrdering(Core);
-
 
 
 	std::string modeString = mode == REDUCTION_SEARCH ? "Reduction" : "Russian Doll";
@@ -518,24 +525,24 @@ void defclique::run(Graph &G, int k, int mode) {
 		// if (upperbound() <= Ss.size()-k)
 		// 	continue;
 
-		if (Ss.size() < k+1) {
-			S.clear();
-			C.clear();
-			S.push(u);
-			for (int j = i+1; j < o.numOrdered; ++j) C.push(o.ordered[j]);
-			Sub.subGraph(Core, S, C);
-			nnbS = 0;
-			// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
-			for (int v : Sub.V) degS[v] = degC[v] = 0;
-			for (int v : Sub.nbr[u]) degS[v] = 1;
-			for (int v : C) {
-				for (int w : Sub.nbr[v])
-					++degC[w];
-			}
-		}
-		else {
-			preprocessing(Core, o, u, TWO_HOP);
-		}
+		// if (Ss.size() < k+1) {
+		// 	S.clear();
+		// 	C.clear();
+		// 	S.push(u);
+		// 	for (int j = i+1; j < o.numOrdered; ++j) C.push(o.ordered[j]);
+		// 	Sub.subGraph(Core, S, C);
+		// 	nnbS = 0;
+		// 	// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
+		// 	for (int v : Sub.V) degS[v] = degC[v] = 0;
+		// 	for (int v : Sub.nbr[u]) degS[v] = 1;
+		// 	for (int v : C) {
+		// 		for (int w : Sub.nbr[v])
+		// 			++degC[w];
+		// 	}
+			
+		// }
+		// else
+		preprocessing(Core, o, u, TWO_HOP);
 		clr.graphColoring(Sub, Ss.size()-k+1);
 		auto branchStartTimePoint = std::chrono::steady_clock::now();
 		branch(0);
@@ -547,8 +554,15 @@ void defclique::run(Graph &G, int k, int mode) {
 	auto totalTimeCount = std::chrono::duration_cast<std::chrono::milliseconds> (
 		std::chrono::steady_clock::now() - startTimePoint).count();
 
+
 	log("%s search done! Branch time: %ld ms, total time: %ld ms", 
 		modeString.c_str(), branchTimeCount, totalTimeCount);
+
+	if (Ss.size() < k+2) {
+		Ss.clear();
+		log("Warning: unable to find a defective clique with size larger than k+2.")		
+	}
+
 	logSet(Ss, "S*");
 
 #ifdef DEBUG_RESULT
