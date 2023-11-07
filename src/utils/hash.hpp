@@ -191,7 +191,7 @@ public:
 
 		return _mm_movemask_epi8(flag) != 0;
 	}
-	void remove(int u) {
+	void erase(int u) {
 		if (size == 0) return;
 		int hs1 = hash1(u);
 		int hs2 = hash2(u);

@@ -4,8 +4,9 @@ include_directories(utils defclique)
 
 add_subdirectory(utils)
 add_subdirectory(defclique)
+add_subdirectory(kdbb)
 
 set(EXECUTABLE_NAME run)
 
 add_executable(${EXECUTABLE_NAME} main.cpp)
-target_link_libraries(${EXECUTABLE_NAME} Utils DefClique)
+target_link_libraries(${EXECUTABLE_NAME} Utils DefClique KDBB)

@@ -15,8 +15,8 @@ namespace kdbb {
 	Graph preprocessing(Graph &G, int k, int lb);
 	Graph coreReduction(Graph &G, int k);
 	Graph edgeReduction(Graph &G, int k);
-	int KDBB(std::string filename, int k);
-	int branch(int v, int lb);
+	int run(std::string filename, int k);
+	void branch(int dep, int v);
 }
 
 

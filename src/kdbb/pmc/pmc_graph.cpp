@@ -113,6 +113,8 @@ void pmc_graph::read_edges(const string& filename) {
     ifstream in (filename.c_str());
     if (!in) { cout << filename << "File not found!" <<endl; return; }
 
+    getline(in, line);
+
     while (!in.eof()) {
         getline(in,line);
         if (line[0] == '%' || line[0] == '#') continue;

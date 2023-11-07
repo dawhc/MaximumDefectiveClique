@@ -1,4 +1,5 @@
 #include "defclique/defclique.h"
+#include "kdbb/kdbb.h"
 #include "utils/bigraph.hpp"
 #include "utils/log.hpp"
 #include <chrono>
@@ -7,8 +8,12 @@
 #include <cstdlib>
 #include <vector>
 
+
+#define ALGO_DEFAULT 0
+#define ALGO_KDBB 1
+
 void usage() {
-	std::cout << "Usage: bin/run <dataset> <k> [RussianDoll/Reduction]" << std::endl;
+	std::cout << "Usage: bin/run <dataset> <k> [RussianDoll/Reduction/KDBB]" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -19,33 +24,29 @@ int main(int argc, char* argv[]) {
 	}
 
 	int mode = REDUCTION_SEARCH;
+	int algo = ALGO_DEFAULT;
+	int k = atoi(argv[2]);
 
-	if (argc >= 4 && !strcmp("RussianDoll", argv[3]))
-		mode = RUSSIANDOLL_SEARCH;
-	else if ((argc >= 4 && !strcmp("Reduction", argv[3])) || argc == 3)
-		mode = REDUCTION_SEARCH;
+	if (argc == 3) mode = REDUCTION_SEARCH;
+	else if (!strcmp("RussianDoll", argv[3])) mode = RUSSIANDOLL_SEARCH;
+	else if (!strcmp("Reduction", argv[3])) mode = REDUCTION_SEARCH;
+	else if (!strcmp("KDBB", argv[3])) {
+		algo = ALGO_KDBB;
+	}
 	else {
 		usage();
 		return 0;
 	}
-
-	log("Reading graph: %s ...", strrchr(argv[1], '/')+1);
+	
 
 	auto startTimePoint = std::chrono::steady_clock::now();
 
-	Graph G(argv[1]);
+	if (algo == ALGO_DEFAULT)
+		defclique::run(argv[1], k, mode);
+	else if (algo == ALGO_KDBB)
+		kdbb::run(argv[1], k);
 
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::steady_clock::now() - startTimePoint);
-
-	log("Reading graph done! Time spent: %ld ms", duration.count());
-	log("Graph info: n=%d, m=%d, maxdeg=%d", G.n, G.m, G.maxDeg);
-
-	startTimePoint = std::chrono::steady_clock::now();
-
-	defclique::run(G, atoi(argv[2]), mode);
-
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::steady_clock::now() - startTimePoint);
 
 	log("Total time spent: %ld ms\n", duration.count());

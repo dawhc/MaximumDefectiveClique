@@ -162,8 +162,8 @@ struct LinkedGraph {
 	void removeEdge(int eid) {
 		if (eid & 1) --eid;
 		Edge &e1 = edges[eid], &e2 = edges[eid+1];
-		nbrMap[e1.u].remove(e1.v);
-		nbrMap[e2.u].remove(e2.v);
+		nbrMap[e1.u].erase(e1.v);
+		nbrMap[e2.u].erase(e2.v);
 		if (e1.next != -1) edges[e1.next].prev = e1.prev;
 		if (e1.prev != -1) edges[e1.prev].next = e1.next;
 		if (e2.next != -1) edges[e2.next].prev = e2.prev;

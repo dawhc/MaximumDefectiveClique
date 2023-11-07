@@ -21,12 +21,12 @@
 #define PMC_UTILS_H_
 
 #include <cstddef>
-// #include <sys/time.h>
-// #include <unistd.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <iostream>
 #include "assert.h"
 #include <sys/types.h>
-// #include <dirent.h>
+#include <dirent.h>
 #include <errno.h>
 #include <string>
 #include <set>

@@ -3,7 +3,7 @@
 #include "../utils/coloring.hpp"
 #include "../utils/log.hpp"
 #include <chrono>
-#include <cstdint>
+#include <cstring>
 #include <ratio>
 #include <vector>
 #include <cstdio>
@@ -450,7 +450,20 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 }
 
 
-void defclique::run(Graph &G, int k, int mode) {
+void defclique::run(const std::string &filename, int k, int mode) {
+
+	log("Reading graph: %s ...", strrchr(filename.c_str(), '/')+1);
+
+	auto startTimePoint = std::chrono::steady_clock::now();
+
+	Graph G(filename);
+
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now() - startTimePoint);
+
+	log("Reading graph done! Time spent: %ld ms", duration.count());
+	log("Graph info: n=%d, m=%d, maxdeg=%d", G.V.size(), G.m, G.maxDeg);
+
 
 	S.reserve(G.n);
 	C.reserve(G.n);
@@ -489,7 +502,7 @@ void defclique::run(Graph &G, int k, int mode) {
 	std::string modeString = mode == REDUCTION_SEARCH ? "Reduction" : "Russian Doll";
 	log("Running %s search ...", modeString.c_str());
 
-	auto startTimePoint = std::chrono::steady_clock::now();
+	startTimePoint = std::chrono::steady_clock::now();
 
 	int branchTimeCount = 0;
 

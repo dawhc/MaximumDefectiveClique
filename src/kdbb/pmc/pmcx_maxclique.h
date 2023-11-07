@@ -32,6 +32,7 @@
 #include "pmc_neigh_cores.h"
 #include "pmc_neigh_coloring.h"
 #include <algorithm>
+#include <omp.h>
 
 using namespace std;
 
@@ -90,6 +91,7 @@ namespace pmc {
                 initialize();
                 vertex_ordering = params.vertex_search_order;
                 decr_order = params.decreasing_order;
+                omp_set_num_threads(params.threads);
             }
 
             ~pmcx_maxclique() {};

@@ -1,13 +1,15 @@
 #include "kdbb.h"
 #include "pmc/pmc.h"
 #include <chrono>
+#include <chrono>
+#include <omp.h>
 #include <queue>
 #include <algorithm>
 
 namespace kdbb {
 	VertexSet S, C;
 	std::vector<int> degS, degC;
-	int k, nnbS;
+	int k, nnbS, lb;
 	Graph G;
 	std::vector<int> bin;
 }
@@ -140,6 +142,7 @@ int kdbb::fastLB(std::string filename) {
     pmc::pmc_graph G(filename);
     input in;
     in.graph = filename;
+    in.threads = std::min(8, omp_get_max_threads());
     G.compute_cores();
     in.ub = G.get_max_core() + 1;
     std::vector<int> C;
@@ -159,24 +162,46 @@ int kdbb::fastLB(std::string filename) {
 }
 
 
-int kdbb::KDBB(std::string filename, int k) {
+int kdbb::run(std::string filename, int k) {
 	// TODO: FastLB
 	Graph inputG(filename);
-	int lb = fastLB(filename);
+	lb = fastLB(filename);
+	kdbb::k = k;
 	G = preprocessing(inputG, k, lb);
 	S.reserve(G.n);
 	C.reserve(G.n);
+	degS.resize(G.n);
+	degC.resize(G.n);
 	bin.resize(G.maxDeg+1);
 	for (int v : G.V) C.push(v);
 	nnbS = 0;
-	return branch(-1, lb);
+	auto startTimePoint = std::chrono::steady_clock::now();
+	branch(0, -1);
+	auto duration = std::chrono::duration_cast<chrono::milliseconds>(
+		std::chrono::steady_clock::now() - startTimePoint);
+	fprintf(stderr, "Branch result: size=%d, time=%ld ms\n", lb, duration.count());
+	return lb;
 }
 
-int kdbb::branch(int u, int lb) {
+void printSet(VertexSet &V, const std::string &name) {
+	std::vector<int> S(V.begin(), V.end());
+	std::sort(S.begin(), S.end());
+	std::stringstream ss;
+	ss << "{";
+	for (int i = 0; i < S.size(); ++i) {
+		if (i > 0) ss << ",";
+		ss << S[i];
+	}
+	ss << "}";
+	fprintf(stderr, "%s: size=%d, content=%s\n", 
+		name.c_str(), V.size(), ss.str().c_str());
+}
+
+void kdbb::branch(int dep, int u) {
 
 	auto numNbrS = [&](int v) {
 		int cnt = 0;
-		if (S.size() < G.nbr[u].size()) {
+		if (S.size() < G.nbr[v].size()) {
 			for (int w : S)
 				if (G.connect(w, v))
 					++cnt;
@@ -191,7 +216,7 @@ int kdbb::branch(int u, int lb) {
 
 	auto numNbrC = [&](int v) {
 		int cnt = 0;
-		if (C.size() < G.nbr[u].size()) {
+		if (C.size() < G.nbr[v].size()) {
 			for (int w : C)
 				if (G.connect(w, v))
 					++cnt;
@@ -243,8 +268,14 @@ int kdbb::branch(int u, int lb) {
 		return cb;
 	};
 
+	// fprintf(stderr, "*** dep=%d, |S|=%d, |C|=%d, nnbS=%d, u=%d, lb=%d\n", 
+	// 	dep, S.size(), C.size(), nnbS, u, lb);
 
-	if (nnbS > k) return lb;
+	// printSet(S, "S");
+	// printSet(C, "C");
+
+
+	if (nnbS > k) return;
 
 	int posC = C.frontPos();
 
@@ -266,17 +297,16 @@ int kdbb::branch(int u, int lb) {
 		}
 
 		for (int w : C) {
-			// bool flag = false;
-			// if (G.connect(u, w)) flag = true;
-			// else {
-			// 	for (int u : G.nbr[w])
-			// 		if (!S.inside(u) && !C.inside(u)) {
-			// 			flag = true;
-			// 			break;
-			// 		}
-			// }
-			// if (flag) {
-			if (true) {
+			bool flag = false;
+			if (G.connect(u, w)) flag = true;
+			else {
+				for (int x : G.nbr[w]) if (!S.inside(x) && !C.inside(x)) {
+					flag = true;
+					break;
+				}
+			}
+			if (flag) {
+			// if (true) {
 				if (S.size()+1 + degC[w] + std::min(k-nnbS-(S.size()-degS[w]), C.size()-degC[w]-1) <= lb) {
 					C.pop(w);
 					continue;
@@ -287,8 +317,8 @@ int kdbb::branch(int u, int lb) {
 						int comm = numCommNbrC(u, w);
 						if (S.size()+2 + comm + std::min(k-nnbS-(2*S.size()-degS[u]-degS[w]), C.size()-comm-2) <= lb) {
 							removedEdges.push_back(make_pair(u, w));
-							G.nbrMap[u].remove(w);
-							G.nbrMap[w].remove(u);
+							G.nbrMap[u].erase(w);
+							G.nbrMap[w].erase(u);
 						} 
 					}
 				}
@@ -297,8 +327,8 @@ int kdbb::branch(int u, int lb) {
 						int comm = numCommNbrC(u, w);
 						if (S.size()+2 + comm + std::min(k-nnbS-(2*S.size()-degS[u]-degS[w]), C.size()-comm-2) <= lb) {
 							removedEdges.push_back(make_pair(u, w));
-							G.nbrMap[u].remove(w);
-							G.nbrMap[w].remove(u);
+							G.nbrMap[u].erase(w);
+							G.nbrMap[w].erase(u);
 						}
 					}
 				}
@@ -306,25 +336,28 @@ int kdbb::branch(int u, int lb) {
 		}
 	}
 
+	do {
 
+		if (C.size() == 0) {
+			lb = std::max(lb, S.size());
+			break;
+		}
 
-	if (C.size() == 0) return S.size();
+		if (candibound() <= lb) break;
 
+		int v = C[C.frontPos()];
+		int degSv = degS[v];
+		
+		nnbS += S.size() - degSv;
+		C.pop(v);
+		S.push(v);
+		branch(dep+1, v);
+		S.pop(v);
+		nnbS -= S.size() - degSv;
+		branch(dep+1, v);
+		C.push(v);
 
-
-	if (candibound() <= lb) return lb;
-
-	int v = C[C.frontPos()];
-	int degSv = degS[v];
-	
-	nnbS += S.size() - degSv;
-	C.pop(v);
-	S.push(v);
-	lb = std::max(lb, branch(v, lb));
-	S.pop(v);
-	nnbS -= S.size() - degSv;
-	lb = std::max(lb, branch(v, lb));
-	C.push(v);
+	} while (false);
 
 	C.restore(posC);
 
@@ -332,6 +365,4 @@ int kdbb::branch(int u, int lb) {
 		G.nbrMap[e.first].insert(e.second);
 		G.nbrMap[e.second].insert(e.first);
 	}
-
-	return lb;
 }

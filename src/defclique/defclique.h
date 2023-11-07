@@ -19,7 +19,7 @@ namespace defclique {
 	void preprocessing(Graph &G, Ordering &o, int u, int mode=TWO_HOP);
 	VertexSet heuristic(Graph &G, int k);
 	int upperbound();
-	void run(Graph &G, int k, int mode=REDUCTION_SEARCH);
+	void run(const std::string &filename, int k, int mode=REDUCTION_SEARCH);
 	void moveCToS(int v);
 	void moveSToC(int v);
 	int updateC(int v);
