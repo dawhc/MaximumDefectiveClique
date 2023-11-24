@@ -9,15 +9,17 @@
 namespace kdbb {
 	VertexSet S, C;
 	std::vector<int> degS, degC;
-	int k, nnbS, lb;
+	int k, nnbS, lb, numBranches, numBound;
 	Graph G;
 	std::vector<int> bin;
 }
 
 
 Graph kdbb::preprocessing(Graph &G, int k, int lb) {
+	fprintf(stderr, "Preprocessing......");
 	Graph C = coreReduction(G, lb-k);
 	C = edgeReduction(C, lb-k-1);
+	fprintf(stderr, "Done, before: n=%d, m=%d; after: n=%d, m=%d\n", G.V.size(), G.m, C.V.size(), C.m);
 	return C;
 }
 
@@ -166,6 +168,7 @@ int kdbb::run(std::string filename, int k) {
 	// TODO: FastLB
 	Graph inputG(filename);
 	lb = fastLB(filename);
+	lb = std::max(lb, k+1);
 	kdbb::k = k;
 	G = preprocessing(inputG, k, lb);
 	S.reserve(G.n);
@@ -173,13 +176,13 @@ int kdbb::run(std::string filename, int k) {
 	degS.resize(G.n);
 	degC.resize(G.n);
 	bin.resize(G.maxDeg+1);
-	for (int v : G.V) C.push(v);
-	nnbS = 0;
 	auto startTimePoint = std::chrono::steady_clock::now();
+	for (int v : G.V) C.push(v);
+	nnbS = numBranches = numBound = 0;
 	branch(0, -1);
 	auto duration = std::chrono::duration_cast<chrono::milliseconds>(
 		std::chrono::steady_clock::now() - startTimePoint);
-	fprintf(stderr, "Branch result: size=%d, time=%ld ms\n", lb, duration.count());
+	fprintf(stderr, "Branch result: size=%d, time=%ld ms, numBranches=%d, numBound=%d\n", lb, duration.count(), numBranches, numBound);
 	return lb;
 }
 
@@ -198,6 +201,7 @@ void printSet(VertexSet &V, const std::string &name) {
 }
 
 void kdbb::branch(int dep, int u) {
+	++numBranches;
 
 	auto numNbrS = [&](int v) {
 		int cnt = 0;
@@ -343,7 +347,10 @@ void kdbb::branch(int dep, int u) {
 			break;
 		}
 
-		if (candibound() <= lb) break;
+		if (candibound() <= lb) {
+			++numBound;
+			break;
+		}
 
 		int v = C[C.frontPos()];
 		int degSv = degS[v];

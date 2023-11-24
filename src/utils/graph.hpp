@@ -50,6 +50,7 @@ struct Graph {
 		int numEdges = fio.getUInt();
 		resize(n);
 		for (int i = 0; i < numEdges; ++i) {
+			// fprintf(stderr, "%u/%u\r", i, numEdges);
 			int u = fio.getUInt();
 			int v = fio.getUInt();
 			addEdge(u, v);

@@ -12,7 +12,7 @@
 //#define EDGE_REDUCTION
 #define DEBUG_RESULT
 // #define DEBUG_BRANCH
-#define HEURISTIC_V2
+#define UPPERBOUND_FULL
 
 
 namespace defclique {
@@ -374,7 +374,6 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 			for (int v : S) Ss.push(v);
 		}
 
-		// TODO: another while
 		S.clear(); 
 		S.push(u);
 		for (int v : Sub.V) 
@@ -516,6 +515,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 #endif
 
 		if (mode == RUSSIANDOLL_SEARCH && o.value[u] < Ss.size()-k) break;
+		if (mode == REDUCTION_SEARCH && o.numOrdered-i <= Ss.size()) break;
 
 		// S.clear();
 		// C.clear();
@@ -595,17 +595,28 @@ void defclique::run(const std::string &filename, int k, int mode) {
 
 }
 
-
+#ifdef UPPERBOUND_FULL
 int defclique::upperbound() {
-	D.clear();
+	D.clear(); C1.clear();
 	int s = nnbS;
 	int posC = C.frontPos();
-	for (int v : C) cnD[v] = 0;
-	while (C.size() > 0) {
+	for (int v : C) {
+		cnD[clr.color[v]] = 0;
+		if (S.size() == degS[v]) C1.push(v);
+	}
+	for (int v : C1) {
+		if (cnD[clr.color[v]] == 0) {
+			D.push(v);
+			C.pop(v);
+			cnD[clr.color[v]] = 1;
+		}
+	}
+
+	while (C.size() > 0 && nnbS < k) {
 		int u = -1, minv = 0x7fffffff;
 		for (int v : C) {
-			if (cnD[v] + S.size() - degS[v] < minv) {
-				minv = cnD[v] + S.size() - degS[v];
+			if (cnD[clr.color[v]] + S.size() - degS[v] < minv) {
+				minv = cnD[clr.color[v]] + S.size() - degS[v];
 				u = v;
 			}
 		}
@@ -614,14 +625,65 @@ int defclique::upperbound() {
 
 		D.push(u);
 		C.pop(u);
-		for (int v : C) {
-			if (clr.color[v] == clr.color[u]) 
-				++cnD[v];
-		}
+		++cnD[clr.color[u]];
+		// for (int v : C) {
+		// 	if (clr.color[v] == clr.color[u]) 
+		// 		++cnD[v];
+		// }
 	}
 	C.restore(posC);
 	return S.size() + D.size();
 }
+
+#elif defined(UPPERBOUND_COLOR) // Color upperbound
+int defclique::upperbound() {
+	int cntClr = 0;
+	for (int v : S) cnD[clr.color[v]] = 0;
+	for (int v : C) cnD[clr.color[v]] = 0;
+	for (int v : S) if (!cnD[clr.color[v]]) { cnD[clr.color[v]] = 1; ++cntClr; }
+	for (int v : C) if (!cnD[clr.color[v]]) { cnD[clr.color[v]] = 1; ++cntClr; }
+	return cntClr + k;
+}
+
+#elif defined(UPPERBOUND_CORE) // Core upperbound
+int defclique::upperbound() {
+	C1.clear();
+	for (int v : S) { C1.push(v); degC1[v] = degS[v] + degC[v]; }
+	for (int v : C) { C1.push(v); degC1[v] = degS[v] + degC[v]; }
+	int head = 0, tail = 0;
+	for (int v : C1)
+		if (degC1[v] < Ss.size()-k) {
+			C1.pop(v);
+			q[tail++] = v;
+		}
+
+	while (head < tail) {
+		int u = q[head++];
+		if (Sub.nbr[u].size() < C1.size()) {
+			for (int v : Sub.nbr[u])
+				if (C1.inside(v) && --degC1[v] < Ss.size()-k) {
+					C1.pop(v);
+					q[tail++] = v;
+				}
+		}
+		else {
+			for (int v : C1)
+				if (Sub.connect(u, v) && --degC1[v] < Ss.size()-k) {
+					C1.pop(v);
+					q[tail++] = v;
+				}
+		}
+	}
+
+	if (C1.size() == 0) return Ss.size();
+	return Ss.size()+1;
+
+}
+#else // No upperbound
+int defclique::upperbound() {
+	return Ss.size()+1;
+}
+#endif
 
 
 void defclique::moveCToS(int v) {
@@ -710,8 +772,9 @@ bool defclique::branch(int dep) {
 	// 	}
 	// 	return false;
 	// }
-	if (upperbound() <= Ss.size()) 
+	if (S.size() + C.size() <= Ss.size() || upperbound() <= Ss.size()) 
 		return false;
+
 	C1.clear();
 	for (int v : C) {
 		if (S.size() - degS[v] <= 1)
@@ -791,7 +854,7 @@ bool defclique::branch(int dep) {
 
 		if (flagReturn) break;
 
-		if (C.size() > C1.size()) {
+		if (C.size() > C1.size()) { // Bipartite
 			int u = C[C.frontPos()];
 			for (int v : C) {
 				if (degS[v] < degS[u])
@@ -807,7 +870,7 @@ bool defclique::branch(int dep) {
 		}
 
 
-		else {
+		else { // Pivoting 
 			int posC = C.frontPos();
 			int u = C1[C1.frontPos()];
 			for (int v : C1) {
