@@ -1,6 +1,7 @@
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 
+#include <chrono>
 #include <cstdint>
 #include <initializer_list>
 #include <unordered_map>
@@ -117,7 +118,7 @@ struct Graph {
 		for (int u : V) {
 			if (V.size() < G.nbr[u].size()) {
 				for (int v : V)
-					if (u < v && G.connect(u, v))
+					if (u  < v && G.connect(u, v))
 						add_edge(u, v);
 			}
 			else {

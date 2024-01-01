@@ -187,36 +187,66 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 	// Construct C1
 	if (G.nbr[u].size() < o.numOrdered-i-1) {
 		for (int v : G.nbr[u])
-			if (o.order[v] > i)
-				C1.push(v);
+			if (o.order[v] > i) C1.push(v);
 	}
 	else {
 		for (int j = i+1; j < o.numOrdered; ++j) {
 			int v = o.ordered[j];
-			if (G.connect(u, v))
-				C1.push(v);
+			if (G.connect(u, v)) C1.push(v);
 		}
 	}
-	if (Ss.size() >= C1.size()+1+k) {
+
+	if ((mode == ONE_HOP && Ss.size() >= C1.size()+1) || 
+		(mode == TWO_HOP && Ss.size() >= C1.size()+1+k)) {
 		S.clear();
 		C.clear();
 		C1.clear();
 		return;
 	}
 
-	Sub.subGraph(G, C1);
+	// Sub.subGraph(G, C1);
+
+	int head = 0, tail = 0;
+
+	Sub.n = Sub.m = 0;
+	Sub.V.clear();
+
+	for (int v : C1) Sub.nbr[v].clear();
+
+	for (int i = C1.frontPos(); i < C1.backPos(); ++i) {
+		int v = C1[i];
+		for (int j = i+1; j < C1.backPos(); ++j) {
+			int w = C1[j];
+			if (C1.backPos()-j+1 + Sub.nbr[v].size() < Ss.size()-k-1) break;
+			if (G.connect(v, w)) {
+				Sub.nbr[v].push_back(w);
+				Sub.nbr[w].push_back(v);
+				++Sub.m;
+			}
+		}
+		if (Sub.nbr[v].size()+k+1 < Ss.size()) {
+			C1.pop(v);
+			q[tail++] = v;
+			if (mode == ONE_HOP && S.size()+C1.size() <= Ss.size()) {
+				S.clear();
+				C1.clear();
+				return;
+			}
+		}
+	}
+
 
 	for (int v : C1)
 		degC1[v] = Sub.nbr[v].size();
 
-	int head = 0, tail = 0;
-
-	for (int v : C1) {
-		if (degC1[v] < Ss.size()-k-1) {
-			q[tail++] = v;
-			sub(Sub, C1, degC1, v);
-		}
-	}
+	// for (int v : C1) {
+	// 	if (degC1[v] < Ss.size()-k-1) {
+	// 		q[tail++] = v;
+	// 		sub(Sub, C1, degC1, v);
+	// 	}
+	// }
+	for (int i = 0; i < tail; ++i)
+		sub(Sub, C1, degC1, q[i]);
 
 	while (head < tail) {
 		int v = q[head++];
@@ -234,6 +264,11 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 					q[tail++] = w;
 					sub(Sub, C1, degC1, w);
 				}
+		}
+		if (mode == ONE_HOP && S.size()+C1.size() <= Ss.size()) {
+			S.clear();
+			C1.clear();
+			return;
 		}
 	}
 
@@ -277,6 +312,7 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 				C.pop(v);
 	}
 
+	
 	Sub.subGraph(G, S, C1, C);
 
 	degC1[u] = C1.size();
@@ -310,7 +346,11 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 	o.degeneracyOrdering(G);
 
-	for (int i = o.numOrdered-1; i >= 0; --i) {
+	int maxCore = o.value[o.ordered[o.numOrdered-1]];
+
+	Sub.resize(G.n);
+
+	for (int i = o.numOrdered-maxCore; i >= 0; --i) {
 		// fprintf(stderr, "%d/%d\r", o.numOrdered-i, o.numOrdered);
 
 		int u = o.ordered[i];
@@ -322,7 +362,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 
 		int j = oSub.numOrdered;	
 
-		while (C.size() > 0) {
+		while (C.size() > 0 && S.size()+C.size() > Ss.size()) {
 
 			// Select a vertex from C with maximum degeneracy
 			int u = oSub.ordered[--j];
@@ -379,7 +419,7 @@ VertexSet defclique::heuristic(Graph &G, int k) {
 		for (int v : Sub.V) 
 			degS[v] = (int)Sub.connect(u, v);
 
-		while (C1.size() > 0) {
+		while (C1.size() > 0 && S.size()+C1.size() > Ss.size()) {
 
 			// Select a vertex from C with maximum degree
 			int u = C1[C1.frontPos()];
@@ -503,7 +543,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 
 	startTimePoint = std::chrono::steady_clock::now();
 
-	int branchTimeCount = 0;
+	int branchTimeCount = 0, preTimeCount = 0;
 
 	for (int i = mode == REDUCTION_SEARCH ? 0 : o.numOrdered - 1; 
 		i >= 0 && i < o.numOrdered; mode == REDUCTION_SEARCH ? ++i : --i) {
@@ -555,11 +595,15 @@ void defclique::run(const std::string &filename, int k, int mode) {
 			
 		// }
 		// else
+		auto preStartTimePoint = std::chrono::steady_clock::now();
 		preprocessing(Core, o, u, TWO_HOP);
+		preTimeCount += std::chrono::duration_cast<std::chrono::microseconds>(
+			std::chrono::steady_clock::now() - preStartTimePoint).count();
+		if (C.size()+S.size() <= Ss.size()) continue;
 		clr.graphColoring(Sub, Ss.size()-k+1);
 		auto branchStartTimePoint = std::chrono::steady_clock::now();
 		branch(0);
-		branchTimeCount += std::chrono::duration_cast<std::chrono::milliseconds>(
+		branchTimeCount += std::chrono::duration_cast<std::chrono::microseconds>(
 			std::chrono::steady_clock::now() - branchStartTimePoint).count();
 	}
 	
@@ -568,8 +612,8 @@ void defclique::run(const std::string &filename, int k, int mode) {
 		std::chrono::steady_clock::now() - startTimePoint).count();
 
 
-	log("%s search done! Branch time: %ld ms, total time: %ld ms", 
-		modeString.c_str(), branchTimeCount, totalTimeCount);
+	log("%s search done! Preprocess time: %ld ms, branch time: %ld ms, total time: %ld ms", 
+		modeString.c_str(), preTimeCount/1000, branchTimeCount/1000, totalTimeCount);
 
 	if (Ss.size() < k+2) {
 		Ss.clear();
@@ -580,7 +624,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 
 #ifdef DEBUG_RESULT
 
-	Sub.subGraph(G, Ss);
+	// Sub.subGraph(G, Ss);
 
 	int cnt = 0;
 	for (int v : Sub.V) {
@@ -924,18 +968,15 @@ bool defclique::branch(int dep) {
 	return false;
 }
 
-
-
-
 void defclique::add(Graph &G, VertexSet &V, std::vector<int> &degV, int v) {
-	if (V.inside(v)) return;
+	//if (V.inside(v)) return;
 	V.push(v);
 	for (int w : G.nbr[v])
 		++degV[w];
 }
 
 void defclique::sub(Graph &G, VertexSet &V, std::vector<int> &degV, int v) {
-	if (!V.inside(v)) return;
+	//if (!V.inside(v)) return;
 	V.pop(v);
 	for (int w : G.nbr[v])
 		--degV[w];

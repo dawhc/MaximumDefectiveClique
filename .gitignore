@@ -17,4 +17,5 @@ gmon.out*
 gprof.out*
 
 #Other
-test.*
+test*
+result*
