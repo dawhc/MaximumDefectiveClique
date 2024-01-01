@@ -16,6 +16,8 @@ doc
 gmon.out*
 gprof.out*
 
-#Other
+# Other
 test*
 result*
+sftp-config.json
+*.out

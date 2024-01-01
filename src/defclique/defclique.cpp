@@ -557,44 +557,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 		if (mode == RUSSIANDOLL_SEARCH && o.value[u] < Ss.size()-k) break;
 		if (mode == REDUCTION_SEARCH && o.numOrdered-i <= Ss.size()) break;
 
-		// S.clear();
-		// C.clear();
-
-		// S.push(u);
-
-		// if (Core.nbr[u].size() < o.numOrdered-i-1) {
-		// 	for (int v : Core.nbr[u])
-		// 		if (o.order[v] > i)
-		// 			C.push(v);
-		// }
-		// else {
-		// 	for (int j = i+1; j < o.numOrdered; ++j) {
-		// 		int v = o.ordered[j];
-		// 		if (Core.connect(u, v))
-		// 			C.push(v);
-		// 	}
-		// }
-
-		// if (upperbound() <= Ss.size()-k)
-		// 	continue;
-
-		// if (Ss.size() < k+1) {
-		// 	S.clear();
-		// 	C.clear();
-		// 	S.push(u);
-		// 	for (int j = i+1; j < o.numOrdered; ++j) C.push(o.ordered[j]);
-		// 	Sub.subGraph(Core, S, C);
-		// 	nnbS = 0;
-		// 	// nnbSub = (((long long)Sub.V.size() * (Sub.V.size()-1)) >> 1) - Sub.m;
-		// 	for (int v : Sub.V) degS[v] = degC[v] = 0;
-		// 	for (int v : Sub.nbr[u]) degS[v] = 1;
-		// 	for (int v : C) {
-		// 		for (int w : Sub.nbr[v])
-		// 			++degC[w];
-		// 	}
-			
-		// }
-		// else
+		
 		auto preStartTimePoint = std::chrono::steady_clock::now();
 		preprocessing(Core, o, u, TWO_HOP);
 		preTimeCount += std::chrono::duration_cast<std::chrono::microseconds>(
@@ -624,7 +587,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 
 #ifdef DEBUG_RESULT
 
-	// Sub.subGraph(G, Ss);
+	Sub.subGraph(G, Ss);
 
 	int cnt = 0;
 	for (int v : Sub.V) {
