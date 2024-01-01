@@ -16,5 +16,5 @@ bin/run <dataset> <k> <algorithm>
 > Algorithm options: Reduction / RussianDoll / KDBB
 - Example
 ```bash
-bin/run datas/ 1 Reduction
+bin/run datas/socfb-Harvard1 1 Reduction
 ```
