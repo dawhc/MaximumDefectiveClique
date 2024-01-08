@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
 	args.add<std::string>("data", 'd', "dataset path", true, "");
 	args.add<int>("key", 'k', "value of k", true, 1);
-	args.add<std::string>("algo", 'a', "algorithm", false, "MDC");
+	args.add<std::string>("algo", 'a', "algorithm", false, "MDC", cmdline::oneof<std::string>("MDC", "RussianDoll", "KDBB"));
 
 	args.parse_check(argc, argv);
 
@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
 	if (algo == "MDC") defclique::run(dataPath, k, REDUCTION_SEARCH);
 	else if (algo == "RussianDoll") defclique::run(dataPath, k, RUSSIANDOLL_SEARCH);
 	else if (algo == "KDBB") kdbb::run(dataPath, k);
-	else fprintf(stderr, "Invalid algorithm: %s\nAvailable algrithms: MDC/RussianDoll/KDBB\n", algo.c_str());
 
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::steady_clock::now() - startTimePoint);
