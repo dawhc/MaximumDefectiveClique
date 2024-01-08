@@ -7,49 +7,35 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include "utils/cmdline.hpp"
 
-
-#define ALGO_DEFAULT 0
-#define ALGO_KDBB 1
-
-void usage() {
-	std::cout << "Usage: bin/run <dataset> <k> [RussianDoll/Reduction/KDBB]" << std::endl;
-}
 
 int main(int argc, char* argv[]) {
 
-	if (argc < 3) {
-		usage();
-		return 0;
-	}
+	cmdline::parser args;
 
-	int mode = REDUCTION_SEARCH;
-	int algo = ALGO_DEFAULT;
-	int k = atoi(argv[2]);
+	args.add<std::string>("data", 'd', "dataset path", true, "");
+	args.add<int>("key", 'k', "value of k", true, 1);
+	args.add<std::string>("algo", 'a', "algorithm", false, "MDC");
 
-	if (argc == 3) mode = REDUCTION_SEARCH;
-	else if (!strcmp("RussianDoll", argv[3])) mode = RUSSIANDOLL_SEARCH;
-	else if (!strcmp("Reduction", argv[3])) mode = REDUCTION_SEARCH;
-	else if (!strcmp("KDBB", argv[3])) {
-		algo = ALGO_KDBB;
-	}
-	else {
-		usage();
-		return 0;
-	}
-	
+	args.parse_check(argc, argv);
+
+	auto dataPath = args.get<std::string>("data");
+	auto k = args.get<int>("key");
+	auto algo = args.get<std::string>("algo");
 
 	auto startTimePoint = std::chrono::steady_clock::now();
 
-	if (algo == ALGO_DEFAULT)
-		defclique::run(argv[1], k, mode);
-	else if (algo == ALGO_KDBB)
-		kdbb::run(argv[1], k);
+	if (algo == "MDC") defclique::run(dataPath, k, REDUCTION_SEARCH);
+	else if (algo == "RussianDoll") defclique::run(dataPath, k, RUSSIANDOLL_SEARCH);
+	else if (algo == "KDBB") kdbb::run(dataPath, k);
+	else fprintf(stderr, "Invalid algorithm: %s\nAvailable algrithms: MDC/RussianDoll/KDBB\n", algo.c_str());
 
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::steady_clock::now() - startTimePoint);
 
-	log("Total time spent: %ld ms\n", duration.count());
+	log("Total time spent: %ld ms", duration.count());
+	
 
 	return 0;
 }

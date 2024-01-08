@@ -11,10 +11,11 @@ cmake . && make
 ## Run
 - Command
 ```bash
-bin/run <dataset> <k> <algorithm>
+bin/run -d <dataset> -k <k> -a <algorithm>
 ```
-> Algorithm options: Reduction / RussianDoll / KDBB
+> Available algoritms: MDC / RussianDoll / KDBB
+
 - Example
 ```bash
-bin/run datas/socfb-Harvard1 1 Reduction
+bin/run -d datas/socfb-Harvard1 -k 1 -a MDC
 ```
