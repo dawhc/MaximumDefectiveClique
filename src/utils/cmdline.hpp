@@ -569,6 +569,9 @@ private:
     }
 
     std::string short_description() const{
+      return std::string("-")+snam;
+    }
+    std::string long_description() const{
       return "--"+nam;
     }
 
@@ -640,6 +643,10 @@ private:
     }
 
     std::string short_description() const{
+      return std::string("-")+snam+"="+detail::readable_typename<T>();
+    }
+
+    std::string long_description() const{
       return "--"+nam+"="+detail::readable_typename<T>();
     }
 
