@@ -15,7 +15,7 @@ class Coloring {
 	std::vector<std::vector<int>> bin;
 public:
 	std::vector<int> color;
-	int numColors, capacity;
+	int capacity, numColors;
 	Ordering o;
 
 	Coloring(int size): numColors(0) { resize(size); }

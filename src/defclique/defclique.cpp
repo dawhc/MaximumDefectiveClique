@@ -576,7 +576,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 
 
 	log("%s search done! Preprocess time: %ld ms, branch time: %ld ms, total time: %ld ms", 
-		modeString.c_str(), preTimeCount/1000, branchTimeCount/1000, totalTimeCount);
+		modeString.c_str(), preTimeCount/1000l, branchTimeCount/1000l, (long)totalTimeCount);
 
 	if (Ss.size() < k+2) {
 		Ss.clear();
