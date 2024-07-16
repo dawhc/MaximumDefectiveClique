@@ -114,7 +114,7 @@ int getdir (string dir, vector<string> &files) {
     }
 
     while ((dirp = readdir(dp)) != NULL) {
-        if (strcmp(dirp->d_name, ".") != 0)
+        if (dirp->d_name != ".")
             files.push_back(string(dirp->d_name));
     }
     closedir(dp);

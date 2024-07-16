@@ -21,3 +21,6 @@ result*
 sftp-config.json
 *.out
 *.a
+
+bin
+docs

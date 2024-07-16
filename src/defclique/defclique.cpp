@@ -184,6 +184,15 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 
 	int i = o.order[u];
 
+	if (Ss.size() < k+1) {
+		for (int j = i+1; j < o.numOrdered; ++j) {
+			int v = o.ordered[j];
+			C1.push(v);
+		}
+	}
+
+	else {
+
 	// Construct C1
 	if (G.nbr[u].size() < o.numOrdered-i-1) {
 		for (int v : G.nbr[u])
@@ -310,6 +319,8 @@ void defclique::preprocessing(Graph &G, Ordering &o, int u, int mode) {
 		for (int v : C)
 			if (degC1[v] < Ss.size()-k)
 				C.pop(v);
+	}
+
 	}
 
 	
@@ -522,28 +533,41 @@ void defclique::run(const std::string &filename, int k, int mode) {
 	defclique::mode = mode;
 
 	Ss = heuristic(G, k);
-
+/*
 	if (Ss.size() < k+1) {
 		for (int v : G.V) {
 			Ss.push(v);
 			if (Ss.size() == k+1) break;
 		}
 	}
-	
+*/
 
-	Graph Core = coreReduction(G, Ss.size() - k);
+	Graph Core = G;
+
+	if (Ss.size() >= k+1) {	
+		Core = coreReduction(Core, Ss.size() - k);
 #ifdef EDGE_REDUCTION
-	Core = edgeReduction(Core, Ss.size() - k - 1);
+		Core = edgeReduction(Core, Ss.size() - k - 1);
 #endif
+	}
+
+	log("Running core ordering...");
+
+	startTimePoint = std::chrono::steady_clock::now();
+
 	Ordering o = Ordering::DegeneracyOrdering(Core);
 
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::steady_clock::now() - startTimePoint);
+
+	log("Core ordering done! Max core: %d, Time spent: %ld ms", o.value[o.ordered[o.numOrdered-1]], duration.count()); 
 
 	std::string modeString = mode == REDUCTION_SEARCH ? "Reduction" : "Russian Doll";
 	log("Running %s search ...", modeString.c_str());
 
 	startTimePoint = std::chrono::steady_clock::now();
 
-	int branchTimeCount = 0, preTimeCount = 0;
+	long long branchTimeCount = 0, preTimeCount = 0;
 
 	for (int i = mode == REDUCTION_SEARCH ? 0 : o.numOrdered - 1; 
 		i >= 0 && i < o.numOrdered; mode == REDUCTION_SEARCH ? ++i : --i) {
@@ -579,7 +603,7 @@ void defclique::run(const std::string &filename, int k, int mode) {
 		modeString.c_str(), preTimeCount/1000l, branchTimeCount/1000l, (long)totalTimeCount);
 
 	if (Ss.size() < k+2) {
-		Ss.clear();
+		//Ss.clear();
 		log("Warning: unable to find a defective clique with size larger than k+2.")		
 	}
 

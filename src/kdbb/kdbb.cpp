@@ -141,6 +141,7 @@ Graph kdbb::edgeReduction(Graph &G, int k) {
 
 
 int kdbb::fastLB(std::string filename) {
+	auto startTimePoint = std::chrono::steady_clock::now();
     pmc::pmc_graph G(filename);
     input in;
     in.graph = filename;
@@ -150,7 +151,12 @@ int kdbb::fastLB(std::string filename) {
     std::vector<int> C;
     pmc::pmc_heu maxclique(G, in);
     in.lb = maxclique.search(G, C);
-    if (in.lb == in.ub) return in.lb;
+    if (in.lb == in.ub) {
+	    auto duration = std::chrono::duration_cast<chrono::milliseconds>(
+			std::chrono::steady_clock::now() - startTimePoint);
+    	fprintf(stderr, "PMC result: size=%d, time=%ld ms\n", in.lb, duration.count());
+    	return in.lb;
+    }
     if (G.num_vertices() < in.adj_limit) {
         G.create_adj();
         pmc::pmcx_maxclique finder(G,in);
@@ -160,6 +166,9 @@ int kdbb::fastLB(std::string filename) {
         pmc::pmcx_maxclique finder(G,in);
         finder.search(G,C);
     }
+    auto duration = std::chrono::duration_cast<chrono::milliseconds>(
+		std::chrono::steady_clock::now() - startTimePoint);
+    fprintf(stderr, "PMC result: size=%d, time=%ld ms\n", C.size(), duration.count());
     return C.size();
 }
 
@@ -182,7 +191,7 @@ int kdbb::run(std::string filename, int k) {
 	branch(0, -1);
 	auto duration = std::chrono::duration_cast<chrono::milliseconds>(
 		std::chrono::steady_clock::now() - startTimePoint);
-	fprintf(stderr, "Branch result: size=%d, time=%ld ms, numBranches=%d, numBound=%d\n", lb, duration.count(), numBranches, numBound);
+	fprintf(stderr, "KDBB result: size=%d, time=%ld ms, numBranches=%d, numBound=%d\n", lb, duration.count(), numBranches, numBound);
 	return lb;
 }
 
