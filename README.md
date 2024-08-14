@@ -31,7 +31,7 @@ bin/run -d datas/socfb-Harvard1 -k 1 -a MDC
 
 The input data should be given as a list of edges, which follows the format below: 
 ```
-<number of edges> <number of L vertices> <number of R vertices>
+<number of edges> <number of vertices>
 <v1> <v2>
 <v3> <v4>
 ...
